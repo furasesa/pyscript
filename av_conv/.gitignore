@@ -1,0 +1,15 @@
+result/
+ffmpeg-python/
+build/
+dist/
+tests/
+econv/__pycache__/
+*.mp4
+*.avi
+*.flv
+*.3gp
+*.ts
+*.mpg
+*.mov
+*.mkv
+*.aac

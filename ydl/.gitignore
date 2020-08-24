@@ -1,0 +1,9 @@
+youtube-dl/
+result/
+build/
+*.mp3
+*.webm
+*.aac
+*.mp4
+*.temp
+*.ogg
