@@ -15,6 +15,104 @@ audio_ext = ["*.mp3", "*.aac", "*.webm", "*.flac", "*.wav"]  # audio
 looking_ext = video_ext + audio_ext
 
 
+def to_second(time_str):
+    try:
+        return reduce(lambda x, y: x * 60 + float(y), time_str.split(":"), 0)
+    except AttributeError as ae:
+        logging.error("AttributeError : %s" % ae)
+        return
+    except ValueError as ve:
+        logging.error("ValueError : %s" % ve)
+        return
+
+
+def get_context(dct, all_key, *keys):
+    for key in keys:
+        if key in all_key:
+            return dct[key]
+        else:
+            try:
+                logging.debug('trying [tags]%s : %s' % (key, dct['tags'][key]))
+                return dct['tags'][key]
+            except KeyError:
+                continue
+
+
+class FileSelector(object):
+    def __init__(self, path='.'):
+        logging.debug('call File Selector')
+        self.dir = pathlib.Path(path)
+        logging.info('directory : %s' % self.dir)
+        self.file_list = [(str(path), path.name) for get in [self.dir.glob(ext) for ext in looking_ext]
+                          for path in get]
+        logging.info('file list : %s' % self.file_list)
+        if len(self.file_list) == 0:
+            logging.error('no supported file in %s' % self.dir)
+        else:
+            try:
+                self.selected_files = checkboxlist_dialog(
+                    title="File Selection",
+                    text="Please Choose file",
+                    values=self.file_list
+                ).run()
+                logging.info("selected result %s " % self.selected_files)
+            except AssertionError as e:
+                logging.error(e, "maybe no files found")
+
+            if len(self.selected_files) == 0:
+                logging.error('no file selected. requires at least 1 file')
+            else:
+                for probe_this in self.selected_files:
+                    logging.debug('probe file : %s ' % probe_this)
+                    probe = ffmpeg.probe(probe_this)
+                    video_context = next((stream for stream in probe['streams'] if stream['codec_type'] == 'video'),
+                                         None)
+                    audio_context = next((stream for stream in probe['streams'] if stream['codec_type'] == 'audio'),
+                                         None)
+                    audio_only = True if video_context is None else False
+                    akey = list(audio_context.keys())
+                    if not audio_only:
+                        vkey = list(video_context.keys())
+                        vcodec = get_context(video_context, vkey, 'codec_name')
+                        profile = get_context(video_context, vkey, 'profile')
+                        width = get_context(video_context, vkey, 'width', 'coded_width')
+                        height = get_context(video_context, vkey, 'height', 'coded_height')
+                        pix_fmt = get_context(video_context, vkey, 'pix_fmt')
+                        duration = get_context(video_context, vkey, 'duration', 'DURATION', 'DURATION-eng')
+                        dur_in_sec = to_second(duration)
+                        logging.info('file : %s' % probe_this)
+                        logging.info('''
+                        video stream
+                        vcodec      : %s
+                        profile     : %s
+                        width       : %s
+                        height      : %s
+                        pix fmt     : %s
+                        duration    : %s second
+                        
+                        ''' % (vcodec, profile, width, height, pix_fmt, dur_in_sec))
+
+                    acodec = get_context(audio_context, akey, 'codec_name')
+                    srate = get_context(audio_context, akey, 'sample_rate')
+                    bps = get_context(audio_context, akey, 'bits_per_sample')
+                    bitrate = get_context(audio_context, akey, 'bit_rate')
+                    duration = get_context(audio_context, akey, 'duration', 'DURATION', 'DURATION-eng')
+                    dur_in_sec = to_second(duration)
+                    logging.info('''
+                    audio stream
+                    acodec      : %s
+                    srate       : %s
+                    bps         : %s
+                    bitrate     : %s
+                    duration    : %s second
+
+                    ''' % (acodec, srate, bps, bitrate, dur_in_sec))
+
+    def get_selected_list(self):
+        logging.info('selected files : %s' % self.selected_files)
+        return self.selected_files
+
+
 class Probe(object):
     """
     usage :
@@ -43,38 +141,6 @@ class Probe(object):
         self.file_probe = []
         self.vkey = []
         self.akey = []
-
-        # logging.debug('stream input : %s' % self.input)
-        # probe = ffmpeg.probe(self.input)
-        # self.video_context = next((stream for stream in probe['streams'] if stream['codec_type'] == 'video'), None)
-        # self.audio_context = next((stream for stream in probe['streams'] if stream['codec_type'] == 'audio'), None)
-        # logging.debug('video context :\n%s' % self.video_context)
-        # logging.debug('audio context :\n%s' % self.audio_context)
-
-    def set_directory(self, path_dir):
-        self.directory = pathlib.Path(path_dir)
-        # scanning for looking ext in dir
-        self.file_list = [(str(path), path.name) for get in [self.directory.glob(ext) for ext in looking_ext]
-                          for path in get]
-        logging.debug('scanned files in %s\n%s' % (self.directory, self.file_list))
-        if len(self.file_list) == 0:
-            logging.error('no file in list')
-            pass
-
-    def get_files(self):
-        return self.file_list
-
-    def select_files(self):
-        if len(self.file_list) >= 1:
-            try:
-                self.selected_files = checkboxlist_dialog(
-                    title="File Selection",
-                    text="Please Choose file",
-                    values=self.file_list
-                ).run()
-                logging.debug("selected result %s " % self.selected_files)
-            except AssertionError as e:
-                logging.error(e, "maybe no files found")
 
     def probe_info(self):
         def get_context(dct, *keys):
@@ -148,9 +214,3 @@ class Probe(object):
 
     def set_config_name(self, config_name):
         self.config_filename = config_name
-
-# class Stream(object):
-#     def __init__(self, directory):
-#         self.directory = directory
-#         self.get_filename = [(a, a) for a in config if a is not 'DEFAULT'] if load_config else \
-#             [(a, a) for b in [glob.glob(ext) for ext in looking_ext] for a in b]
