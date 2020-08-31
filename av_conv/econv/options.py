@@ -39,10 +39,12 @@ def parse_option():
                         '''
                         )
     parser.add_argument('-bv', '--bv',
+                        dest='video_bitrate',
                         action='store',
                         help='video bitrate'
                         )
     parser.add_argument('-ba', '--ba',
+                        dest='audio_bitrate',
                         action='store',
                         help='audio bitrate'
                         )
@@ -62,6 +64,7 @@ def parse_option():
                         )
 
     parser.add_argument('-f', '--format',
+                        dest='format',
                         action='store',
                         help='''
                         e.g. file format ffmpeg -i input -f mp4
