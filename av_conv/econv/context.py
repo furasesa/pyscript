@@ -130,8 +130,12 @@ class FileSelector(object):
     def __init__(self, path):
         self.dir = pathlib.Path(path)
         self.selected_files = []
+        self.select_files()
 
     def get_selected_files(self):
+        return self.selected_files
+
+    def select_files(self):
         try:
             file_list = [(str(path), path.name) for get in [self.dir.glob(ext) for ext in looking_ext]
                               for path in get]
