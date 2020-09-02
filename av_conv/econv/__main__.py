@@ -37,8 +37,8 @@ if __name__ == '__main__':
 
         stream = Stream()
         stream.input(file_input)
-        logging.debug(stream.compile())
-        stream.run(overwrite=True)
+        # logging.debug(stream.compile())
+        # stream.run(overwrite=True)
 
  # logging.debug('args : %s' % args)
     # ss = next((v for k, v in args if k == 'ss'), 0)
