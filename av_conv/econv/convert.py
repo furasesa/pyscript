@@ -47,6 +47,7 @@ class Stream:
         extension = pathlib.Path(input_file).suffix
         # create result path
         result_path = parent / 'result'
+        result_path.mkdir(exist_ok=True)
 
         if self.output_name is None:
             self.output_name = str(name)+str(extension)
