@@ -97,7 +97,13 @@ default is 4
     parser.add_argument('-f', '--format',
                         dest='format',
                         action='store',
-                        help='e.g. file format ffmpeg -i input -f mp4'
+                        help='see ffmpeg -formats. e.g. -f mp4, -f matroska'
+                        )
+
+    parser.add_argument('-c', '--codec',
+                        dest='codec',
+                        action='store',
+                        help='a codec. see ffmpeg -codecs. e.g. -c copy'
                         )
 
     parser.add_argument('-kw', '--kwargs',
@@ -165,6 +171,32 @@ e.g. to crop left=10, right=10, top=20, bottom=20
 -cro "{l: 10, r: 10, t: 20, b: 20}" result crop=iw-20:ih-40:10:ih-20 wrong
 '''
                         )
+    parser.add_argument('-rot', '--rotate',
+                        dest='transpose',
+                        type=int,
+                        action='store',
+                        choices=range(0, 4, 1),
+                        help='''
+video filter transpose. originally -vf transpose=number
+0 - DEFAULT
+1 - Rotate 90 Clockwise
+2 - Rotate 90 Counter-Clockwise
+3 - Rotate 90 Clockwise and flip
+e.g. -rot 1
+e.g. -kw "{vf: transpose=1}"
+'''
+                        )
+    parser.add_argument('-rotm', '--metadata-rotation',
+                        dest='meta_rotation',
+                        type=int,
+                        action='store',
+                        help='''
+rotation change by editing metadata.
+-metadata:s:v rotate="90" -codec copy
+this methode doesn't need re-encode, but player support.
+e.g. -rotm or --metadata-rotation 90 -c:v copy -c:a copy
+'''
+                        )
 
     parser.add_argument('-d', '--dir',
                         dest='directory',
@@ -212,6 +244,7 @@ e.g. -o test.mp4
 
 conversion_args = {}
 filter_args = {}
+custom_args = {}
 switch_args = {}
 option = parse_option()
 
@@ -234,8 +267,8 @@ def get_conversion_group():
     conversion_validation(conversion_args, 'audio_bitrate')
     conversion_validation(conversion_args, 'crf')
     conversion_validation(conversion_args, 'format')
+    conversion_validation(conversion_args, 'codec')
     conversion_validation(conversion_args, 'kwargs')
-    conversion_validation(conversion_args, 'out')
     logging.debug('conversion_args : %s' % conversion_args)
     return conversion_args
 
@@ -251,8 +284,14 @@ def get_filter_args():
     conversion_validation(filter_args, 'fps')
     conversion_validation(filter_args, 'crop')
     conversion_validation(filter_args, 'outer_crop')
+
     # conversion_validation(filter_args, 'qscalev')
     return filter_args
+
+def get_custom_filters():
+    conversion_validation(custom_args, 'transpose')
+    conversion_validation(custom_args, 'meta_rotation')
+    return custom_args
 
 
 def output_name():

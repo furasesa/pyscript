@@ -4,46 +4,68 @@ from .options import get_conversion_group
 from .options import get_switch_args
 from .options import get_filter_args
 from .options import output_name
+from .options import get_custom_filters
 import pathlib
 import logging
 
 
 class Stream:
     def __init__(self):
-        # parser = parse_option()
-        # self.working_dir = vars(parser).get('directory')
+        # static
         self.stream = None
         self.options = get_conversion_group()
         self.switches = get_switch_args()
         self.filters = get_filter_args()
-        kwargs = self.options.get('kwargs')
-        self._kwargs = self.options if kwargs is None else kwargs
+        self.custom = get_custom_filters()
 
-        # result path and file name solver
-        # self.result_path = None
         self.output_name = output_name()
         self.output_file = None
         self.output_extension = '.mp4'
         self.format = self.options.get('format')
 
+        kwargs = self.options.get('kwargs')
+
+        if kwargs is None:
+            self.kwargs = self.options
+        else:
+            self.kwargs = kwargs
+            if len(self.options) > 1:
+                logging.debug('options has more than kwargs, remove kwargs from options')
+                # remove kwargs in option
+                del self.options['kwargs']
+                logging.debug('looking for options : %s' % self.options)
+                # update self.kwargs for every options
+                logging.debug('updating kwargs')
+                self.kwargs.update(self.options)
+
+        logging.debug('kwargs: %s' % self.kwargs)
+
     def input(self, input_file):
+        # extract path, name, extension from input_file
         parent = pathlib.Path(input_file).parent
         name = pathlib.Path(input_file).stem
         extension = pathlib.Path(input_file).suffix
+        # create result path
         result_path = parent / 'result'
-        self.output_extension = self.format if self.format is not None else extension
 
         if self.output_name is None:
-            self.output_name = str(name)+str(self.output_extension)
+            self.output_name = str(name)+str(extension)
         self.output_file = result_path / self.output_name
 
+        # set input stream
         self.stream = ffmpeg.input(str(input_file))
+
+        # filter supported by python-ffmpeg
         if self.switches.get('hflip'):
             self.stream = ffmpeg.hflip(self.stream)
         if self.switches.get('vflip'):
             self.stream = ffmpeg.vflip(self.stream)
         self.stream = self.filter_handler()
-        self.stream = ffmpeg.output(self.stream, str(self.output_file), **self._kwargs)
+        # custom filter
+        self.custom_filter()
+
+        # output
+        self.stream = ffmpeg.output(self.stream, str(self.output_file), **self.kwargs)
 
         # switch handler
 
@@ -55,7 +77,25 @@ class Stream:
     def get_output(self):
         return self.output_file
 
+    def custom_filter(self):
+        if len(self.custom) > 0:
+            if 'transpose' in self.custom:
+                v = self.custom.get('transpose')
+                self.kwargs.update({'vf': 'transpose='+str(v)})
+            if 'meta_rotation' in self.custom:
+                v = self.custom.get('meta_rotation')
+                self.kwargs.update({'metadata:s:v': 'rotate='+str(v)})
+
+        logging.debug('kwargs update : %s' % self.kwargs)
+
     def filter_handler(self):
+        def outer_crop_value(dct, *directions):
+            keys = dict(dct).keys()
+            for direction in directions:
+                if direction in keys:
+                    return dict(dct).get(direction)
+            return -1
+
         if len(self.filters) > 0:
             # filter_args = {}
             logging.debug('has filter')
@@ -65,51 +105,36 @@ class Stream:
                 self.stream = ffmpeg.filter(self.stream, 'fps', fps=self.filters.get('fps'))
 
             if 'outer_crop' in key_list:
-                v = self.filters.get('outer_crop')
-                logging.debug('crop outer value : %s' % v)
+                dct = self.filters.get('outer_crop')
+                logging.debug('crop outer value : %s' % dct)
                 crop_arg = {}
 
-                crop_key = dict(v).keys()
-                left = 0
-                bottom = 0
-                right = 0
-                top = 0
-                if 'l' in crop_key:
-                    left = int(dict(v).get('l'))
-                elif 'left' in crop_key:
-                    left = int(dict(v).get('left'))
+                l = outer_crop_value(dct, 'l', 'left')
+                t = outer_crop_value(dct, 't', 'top')
+                b = outer_crop_value(dct, 'b', 'bottom')
+                r = outer_crop_value(dct, 'r', 'right')
 
-                if 'b' in crop_key:
-                    bottom = int(dict(v).get('b'))
-                elif 'bottom' in crop_key:
-                    bottom = int(dict(v).get('bottom'))
+                no_crop_w = True if l < 0 and r < 0 else False
+                no_crop_h = True if b < 0 and t < 0 else False
 
-                if 'r' in crop_key:
-                    right = int(dict(v).get('r'))
-                elif 'right' in crop_key:
-                    right = int(dict(v).get('right'))
-
-                if 't' in crop_key:
-                    top = int(dict(v).get('t'))
-                elif 'top' in crop_key:
-                    top = int(dict(v).get('top'))
-
-                logging.debug('left: %s, bottom: %s, right: %s, top: %s' % (left, bottom, right, top))
+                logging.debug('left: %s, bottom: %s, right: %s, top: %s' % (l, b, r, t))
 
                 #begin
-                w = 'iw-' + str(left + right)
-                h = 'ih-' + str(top + bottom)
-                x = str(left)
-                y = 'ih-'+str(bottom)
+                # logging.debug('use default width (w): %s; use default height (h): %s' % (no_crop_w, no_crop_h))
+                x = '(in_w-out_w)/2' if no_crop_w else str(l)
+                y = '(in_h-out_h)/2' if no_crop_h else str(t)
+
+                w = 'iw' if no_crop_w else 'iw-' + str(l + r)
+                h = 'ih' if no_crop_h else 'ih-' + str(t + b)
                 logging.debug('x:%s, y:%s, w:%s, h:%s' % (x, y, w, h))
+
                 crop_arg.update({w: None, h: None, x: None, y: None})
-                logging.debug('crop args : %s' % crop_arg)
+                # logging.debug('crop args : %s' % crop_arg)
                 self.stream = ffmpeg.filter(self.stream, 'crop', *crop_arg)
 
             if 'crop' in key_list:
                 logging.debug('crop args : %s' % self.filters.get('crop'))
                 self.stream = ffmpeg.filter(self.stream, 'crop', *self.filters.get('crop'))
-
         return self.stream
 
     # def output(self):

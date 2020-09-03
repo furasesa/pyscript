@@ -81,12 +81,12 @@ class Probe(object):
 class FileSelector(object):
     def __init__(self, path):
         self.dir = pathlib.Path(path)
-        self.anchor = self.dir.anchor
-        self.parent = self.dir.parent
-        self.stem = self.dir.stem
+        # self.anchor = self.dir.anchor
+        # self.parent = self.dir.parent
+        # self.stem = self.dir.stem
         self.selected_files = []
         self.select_files()
-        self.working_path = self.parent / self.stem
+        self.working_path = self.dir.parent / self.dir.stem
 
     def get_full_path(self):
         logging.debug('%s' % self.working_path)
