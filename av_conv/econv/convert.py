@@ -27,10 +27,7 @@ class Stream:
         self.output_name = get_output_name()
         self.output_file = None
 
-        # set handler return self.stream
-        self.stream = self.filter_handler()
-        self.custom_filter()
-        self.global_args_handler()
+
 
     def kwargs_generator(self):
         # kwargs = self.options.get('kwargs')
@@ -51,6 +48,10 @@ class Stream:
     def input(self, input_file):
         # set input stream
         self.stream = ffmpeg.input(str(input_file))
+        # set handler return self.stream
+        self.stream = self.filter_handler()
+        self.custom_filter()
+        self.global_args_handler()
         # output handler
         self.output_handler(input_file)
         # output

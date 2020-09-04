@@ -56,6 +56,7 @@ if __name__ == '__main__':
 
     else:
         for file_input in selected_file:
+            logging.debug('file input : %s' % file_input)
             # name = pathlib.Path(file_input).stem
             # extension = pathlib.Path(file_input).suffix
             # logging.debug('path, name, ext = %s, %s, %s' % (working_dir, name, extension))
