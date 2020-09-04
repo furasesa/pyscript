@@ -81,9 +81,6 @@ class Probe(object):
 class FileSelector(object):
     def __init__(self, path):
         self.dir = pathlib.Path(path)
-        # self.anchor = self.dir.anchor
-        # self.parent = self.dir.parent
-        # self.stem = self.dir.stem
         self.selected_files = []
         self.select_files()
         self.working_path = self.dir.parent / self.dir.stem
@@ -103,7 +100,8 @@ class FileSelector(object):
                 logging.error('no supported file found in %s' % self.dir)
                 sys.exit(10)
             else:
-                logging.info('file list : %s' % file_list)
+                file_list.sort()
+                logging.debug('file list : %s' % file_list)
             self.selected_files = checkboxlist_dialog(
                 title="File Selection",
                 text="Please Choose file",

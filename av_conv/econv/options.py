@@ -3,8 +3,6 @@ import yaml
 import logging
 
 
-
-
 def parse_option():
     parser = argparse.ArgumentParser(
         description='''
@@ -239,6 +237,21 @@ e.g. -o test.mp4
                         action='store_true',
                         help='force overwrite existing file/s'
                         )
+    parser.add_argument('--banner',
+                        dest='banner',
+                        action='store_true',
+                        help='--banner to show banner'
+                        )
+    parser.add_argument('--probe',
+                        dest='probe',
+                        action='store_true',
+                        help='--probe to probe input. --test to skip conversion'
+                        )
+    parser.add_argument('--gen-concat',
+                        dest='gen_concat',
+                        action='store',
+                        help='generate for concat files. -d tests/confile --gen-concat test.txt'
+                        )
     return parser.parse_args()
 
 
@@ -246,6 +259,7 @@ conversion_args = {}
 filter_args = {}
 custom_args = {}
 switch_args = {}
+global_args = {}
 option = parse_option()
 
 
@@ -275,18 +289,27 @@ def get_conversion_group():
 
 def get_switch_args():
     conversion_validation(switch_args, 'test')
-    conversion_validation(switch_args, 'overwrite')
     conversion_validation(switch_args, 'hflip')
     conversion_validation(switch_args, 'vflip')
     return switch_args
+
+
+def get_global_args():
+    conversion_validation(global_args, 'verbosity')
+    conversion_validation(global_args, 'overwrite')
+    conversion_validation(global_args, 'banner')
+    conversion_validation(global_args, 'probe')
+    conversion_validation(global_args, 'gen_concat')
+    return global_args
+
 
 def get_filter_args():
     conversion_validation(filter_args, 'fps')
     conversion_validation(filter_args, 'crop')
     conversion_validation(filter_args, 'outer_crop')
-
     # conversion_validation(filter_args, 'qscalev')
     return filter_args
+
 
 def get_custom_filters():
     conversion_validation(custom_args, 'transpose')
@@ -294,11 +317,9 @@ def get_custom_filters():
     return custom_args
 
 
-def output_name():
+def get_output_name():
     v = vars(option).get('out')
     if v is not None:
         logging.debug('output filename : %s' % v)
         return v
     return None
-
-
