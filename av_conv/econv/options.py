@@ -210,11 +210,14 @@ e.g. -rotm or --metadata-rotation 90 -c:v copy -c:a copy
                         )
     parser.add_argument('-o', '--out',
                         dest='out',
+                        type=yaml.load,
                         action='store',
                         help='''
-output stream
-if more than 1 file selected, please don't use this switch, except merging output
-e.g. -o test.mp4
+supported format name, auto_increment (ai), extension (ext)
+e.g. -o "{name: example, ai: '007', ext: mkv}"
+output: example007.mkv, example008.mkv, ..., example099.mkv,... etc
+e.g. -o "{ai: '02', name: example, ext: mkv}"
+output: 02example.mkv, 03example.mkv, ..., 10example... etc
 '''
                         )
     parser.add_argument('--test',
@@ -317,7 +320,7 @@ def get_custom_filters():
     return custom_args
 
 
-def get_output_name():
+def get_raw_output():
     v = vars(option).get('out')
     if v is not None:
         logging.debug('output filename : %s' % v)

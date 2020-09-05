@@ -3,16 +3,17 @@ import ffmpeg
 from .options import get_conversion_group
 from .options import get_switch_args
 from .options import get_filter_args
-from .options import get_output_name
+from .options import get_raw_output
 from .options import get_custom_filters
 from .options import get_global_args
+from datetime import date
 import pathlib
 import logging
-
 
 class Stream:
     def __init__(self):
         # static
+        logging.debug('class stream __init__')
         self.stream = None
         self.options = get_conversion_group()
         self.switches = get_switch_args()
@@ -24,7 +25,9 @@ class Stream:
         self.kwargs_generator()
         # self.stream.input by call
         # output init
-        self.output_name = get_output_name()
+        self.raw_output_name = get_raw_output()
+        self.auto_increment = -1
+        self.output_name = ''
         self.output_file = None
 
 
@@ -63,6 +66,20 @@ class Stream:
             self.run()
 
     def output_handler(self, input_file):
+
+        def auto_increment(start, width):
+            # logging.debug('auto_increment type : %s : %s' % (type(self.auto_increment), self.auto_increment))
+            if isinstance(self.auto_increment, str):
+                int(self.auto_increment)
+            if int(self.auto_increment) < 0:
+                self.auto_increment = int(start)
+            else:
+                self.auto_increment += 1
+            printed_auto_num = str(self.auto_increment)
+            # logging.debug('printed_auto_num : %s' % printed_auto_num)
+            args = printed_auto_num.zfill(width)
+            logging.debug('args type: %s : %s' % (type(args), args))
+            return args
         # extract path, name, extension from input_file
         parent = pathlib.Path(input_file).parent
         name = pathlib.Path(input_file).stem
@@ -70,8 +87,30 @@ class Stream:
         # create result path
         result_path = parent / 'result'
         result_path.mkdir(exist_ok=True)
-        if self.output_name is None:
+        if self.raw_output_name is None:
+            logging.debug('raw output name is None')
             self.output_name = str(name)+str(ext)
+        else:
+            logging.debug('len raw output name : %s' % len(self.raw_output_name))
+            # re init self.output_name
+            self.output_name = ''
+            for k, v in self.raw_output_name.items():
+                if k == 'name':
+                    self.output_name += v
+                elif k == 'ext':
+                    self.output_name += '.'+v
+                elif k == 'ai':
+                    width_value = len(str(v))
+                    start_value = int(v)
+                    logging.debug('start: %s, width: %s' % (start_value, width_value))
+                    self.output_name += auto_increment(start_value, width_value)
+
+                elif k is 'date':
+                    logging.debug('date: %s' % v)
+                    '''
+                    TODO
+                    '''
+            logging.debug('now output name : %s' % self.output_name)
         self.output_file = result_path / self.output_name
 
     def custom_filter(self):

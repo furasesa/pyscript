@@ -23,6 +23,7 @@ def to_second(time_str):
 
 
 if __name__ == '__main__':
+    stream = Stream()
     concat_file = vars(options).get('gen_concat')
     use_probe = vars(options).get('probe')
     # check if exist, replace or write to next line
@@ -60,5 +61,4 @@ if __name__ == '__main__':
             # name = pathlib.Path(file_input).stem
             # extension = pathlib.Path(file_input).suffix
             # logging.debug('path, name, ext = %s, %s, %s' % (working_dir, name, extension))
-            stream = Stream()
             stream.input(file_input)
