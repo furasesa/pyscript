@@ -103,7 +103,7 @@ default is 4
                         action='store',
                         help='a codec. see ffmpeg -codecs. e.g. -c copy'
                         )
-
+    
     parser.add_argument('-kw', '--kwargs',
                         dest='kwargs',
                         action='store',
@@ -220,6 +220,16 @@ e.g. -o "{ai: '02', name: example, ext: mkv}"
 output: 02example.mkv, 03example.mkv, ..., 10example... etc
 '''
                         )
+    parser.add_argument('-an',
+                        dest='an',
+                        action='store_true',
+                        help='no audio. take out audio stream'
+                        )
+    parser.add_argument('-vn',
+                        dest='vn',
+                        action='store_true',
+                        help='similiar to an, but video. tak out a video from stream'
+                        )
     parser.add_argument('--test',
                         dest='test',
                         action='store_true',
@@ -275,6 +285,7 @@ def conversion_validation(group_args, key):
 
 
 def get_conversion_group():
+    # args with kwargs
     conversion_validation(conversion_args, 'ss')
     conversion_validation(conversion_args, 't')
     conversion_validation(conversion_args, 'to')
@@ -298,11 +309,14 @@ def get_switch_args():
 
 
 def get_global_args():
+    # global and args without kwrags
     conversion_validation(global_args, 'verbosity')
     conversion_validation(global_args, 'overwrite')
     conversion_validation(global_args, 'banner')
     conversion_validation(global_args, 'probe')
     conversion_validation(global_args, 'gen_concat')
+    conversion_validation(global_args, 'an')
+    conversion_validation(global_args, 'vn')
     return global_args
 
 

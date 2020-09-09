@@ -61,7 +61,7 @@ class Stream:
         self.stream = ffmpeg.output(self.stream, str(self.output_file), **self.kwargs)
         # switch handler
         if self.switches.get('test'):
-            logging.debug(self.compile())
+            print(self.compile())
         else:
             self.run()
 
@@ -91,13 +91,14 @@ class Stream:
             logging.debug('raw output name is None')
             self.output_name = str(name)+str(ext)
         else:
-            logging.debug('len raw output name : %s' % len(self.raw_output_name))
             # re init self.output_name
             self.output_name = ''
             for k, v in self.raw_output_name.items():
                 if k == 'name':
+                    logging.debug('name: %s' % v)
                     self.output_name += v
                 elif k == 'ext':
+                    logging.debug('given ext: %s' %v)
                     self.output_name += '.'+v
                 elif k == 'ai':
                     width_value = len(str(v))
@@ -144,7 +145,9 @@ class Stream:
             if 'fps' in key_list:
                 # fps_v = self.filters.get('fps')
                 self.stream = ffmpeg.filter(self.stream, 'fps', fps=self.filters.get('fps'))
-
+            
+            # issues:
+            # wrong cutting logic
             if 'outer_crop' in key_list:
                 dct = self.filters.get('outer_crop')
                 logging.debug('crop outer value : %s' % dct)
@@ -199,10 +202,13 @@ class Stream:
 
         if not self.global_options.get('banner'):
             self.kwargs.update({'hide_banner': None})
-
-
-
-
+        # no a/v switch
+        if self.global_options.get('vn'):
+            # no video
+            self.kwargs.update({'vn': None})
+        if self.global_options.get('an'):
+            # no audio
+            self.kwargs.update({'an': None})
 
         #
         # if 'hide_banner' in self.global_args():
