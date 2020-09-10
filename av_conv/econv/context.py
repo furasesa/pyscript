@@ -56,7 +56,7 @@ class Probe(object):
             self.probed_file.append((probe_this, probe))
 
     def get_av_context(self):
-        logging.info('probed file %s' % len(self.probed_file))
+        logging.debug('probed file %s' % len(self.probed_file))
         return self.probed_file
 
     def get_duration(self):
@@ -66,7 +66,7 @@ class Probe(object):
             for file, p in self.probed_file:
                 video_context = next((s for s in p['streams'] if s['codec_type'] == 'video'), None)
                 audio_context = next((s for s in p['streams'] if s['codec_type'] == 'audio'), None)
-                logging.info('file : %s\nvc :%s\nac: %s' % (file, video_context, audio_context))
+                print('file : %s\nvideo stream :%s\n\naudio stream: %s\n' % (file, video_context, audio_context))
                 audio_only = True if video_context is None else False
                 if audio_only:
                     akey = list(audio_context.keys())

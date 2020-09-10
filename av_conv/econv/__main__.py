@@ -45,8 +45,9 @@ if __name__ == '__main__':
         probe = Probe(selected_file)
         probe.get_av_context()
         probed_duration = probe.get_duration()
-        for file, duration in probed_duration:
-            logging.info('filename : %s\tduration: %s' % (file, duration))
+        # for filename, duration in probed_duration:
+        #     # print('filename : '+filename+'\tduration: '+str(duration))
+        #     print('filename : %s\tduration: %s\n' % (filename, duration))
 
     if concat_file is not None:
         logging.info('writing %s for concatenate' % concat_file)
