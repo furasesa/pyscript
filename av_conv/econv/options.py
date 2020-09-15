@@ -123,7 +123,7 @@ e.g. -kw "{vcodec: libx264, t: 20, acodec: aac, f: mp4, crf: 20}"
     video_filter_group.add_argument('-fps',
                                     dest='fps',
                                     action='store',
-                                    help='e.g -fps 29 -fps 60 etc'
+                                    help='e.g -fps 29 -fps 60.'
                                     )
     video_filter_group.add_argument('-hflip',
                                     dest='hflip',
@@ -167,6 +167,38 @@ w=iw-20 for each left and right side are -10
 h=ih-40 for each top and bottom are -20
 '''
                                     )
+    video_filter_group.add_argument('-rot', '--rotate',
+                               dest='transpose',
+                               type=int,
+                               action='store',
+                               choices=range(0, 4, 1),
+                               help='''
+    video filter transpose. originally -vf transpose=number
+    0 - DEFAULT
+    1 - Rotate 90 Clockwise
+    2 - Rotate 90 Counter-Clockwise
+    3 - Rotate 90 Clockwise and flip
+    e.g.: -rot 1
+    -vf "{transpose, 1}"
+    -kw "{vf: transpose=1}"
+    transpose requires re-encoding. to avoid, please use -rotm
+    '''
+                                    )
+    video_filter_group.add_argument('-vf',
+                                    dest='vfilter',
+                                    type=yaml.load,
+                                    action='store',
+                                    help='''-vf "{fps, 24}". -vf "{transpose, 1}"'''
+                                    )
+
+    audio_filter_group = parser.add_argument_group('audio filter group')
+    audio_filter_group.add_argument('-af',
+                                    dest='afilter',
+                                    type=yaml.load,
+                                    action='store',
+                                    help='''e.g. aecho in_gain, out_gain, delay, decay
+filter {aecho: '0.8, 0.9, 1000, 0.3'}'''
+                                    )
 
     # special group
     special_group = parser.add_argument_group('special group')
@@ -185,21 +217,7 @@ h=ih-40 for each top and bottom are -20
     # -cro "{l: 10, r: 10, t: 20, b: 20}" result crop=iw-20:ih-40:10:ih-20 wrong
     # '''
     #                         )
-    special_group.add_argument('-rot', '--rotate',
-                               dest='transpose',
-                               type=int,
-                               action='store',
-                               choices=range(0, 4, 1),
-                               help='''
-video filter transpose. originally -vf transpose=number
-0 - DEFAULT
-1 - Rotate 90 Clockwise
-2 - Rotate 90 Counter-Clockwise
-3 - Rotate 90 Clockwise and flip
-e.g. -rot 1
-e.g. -kw "{vf: transpose=1}"
-'''
-                               )
+
     special_group.add_argument('-rotm', '--metadata-rotation',
                                dest='meta_rotation',
                                type=int,
@@ -322,6 +340,8 @@ def get_video_filter_args():
     conversion_validation(video_filter_args, 'crop')
     conversion_validation(video_filter_args, 'hflip')
     conversion_validation(video_filter_args, 'vflip')
+    conversion_validation(video_filter_args, 'transpose')
+    conversion_validation(video_filter_args, 'vfilter')
     # conversion_validation(filter_args, 'outer_crop')
     # conversion_validation(filter_args, 'qscalev')
     return video_filter_args
@@ -334,12 +354,12 @@ def get_audio_filter_args():
     hflip, hue, overlay, setpts, trim, vflip, zoompan
     :return: filter_args
     """
+    conversion_validation(audio_filter_args, 'afilter')
 
     return audio_filter_args
 
 
 def get_special_args():
-    conversion_validation(special_args, 'transpose')
     conversion_validation(special_args, 'meta_rotation')
     conversion_validation(special_args, 'an')
     conversion_validation(special_args, 'vn')

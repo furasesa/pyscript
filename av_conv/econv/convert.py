@@ -3,7 +3,7 @@ import ffmpeg
 from .options import get_global_args
 from .options import get_main_args
 from .options import get_video_filter_args
-
+from .options import get_audio_filter_args
 from .options import get_special_args
 from .options import get_fuctional_args
 from .options import get_raw_output
@@ -19,6 +19,9 @@ class Stream:
         # static
         logging.debug('class stream __init__')
         self.stream = None
+        self.stream_input = None
+        self.stream_audio = None
+        self.stream_video = None
         self.global_options = get_global_args()
         self.main_options = get_main_args()
         self.video_filters = get_video_filter_args()
@@ -53,19 +56,21 @@ class Stream:
 
     def input(self, input_file):
         # set input stream
-        self.stream = ffmpeg.input(str(input_file))
+        self.stream_input = ffmpeg.input(str(input_file))
+        self.stream_audio = self.stream_input.audio
+        self.stream_video = self.stream_input.video
 
         # invoke kwargs
         self.global_args_handler()
         self.special_option_handler()
 
         # return self.stream
-        self.stream = self.video_filter_handler()
+        self.video_filter_handler()
 
         # output handler
         self.output_handler(input_file)
         # output
-        self.stream = ffmpeg.output(self.stream, str(self.output_file), **self.kwargs)
+        self.stream = ffmpeg.output(self.stream_audio, self.stream_video, str(self.output_file), **self.kwargs)
         # switch handler
         if self.functional_options.get('test'):
             print(self.compile())
@@ -92,13 +97,12 @@ class Stream:
 
         if not self.global_options.get('banner'):
             self.kwargs.update({'hide_banner': None})
-        # return self.stream
 
     def special_option_handler(self):
         if len(self.special_options) > 0:
-            if 'transpose' in self.special_options:
-                v = self.special_options.get('transpose')
-                self.kwargs.update({'vf': 'transpose='+str(v)})
+            # if 'transpose' in self.special_options:
+            #     v = self.special_options.get('transpose')
+            #     self.kwargs.update({'vf': 'transpose='+str(v)})
             if 'meta_rotation' in self.special_options:
                 v = self.special_options.get('meta_rotation')
                 self.kwargs.update({'metadata:s:v': 'rotate='+str(v)})
@@ -112,61 +116,17 @@ class Stream:
     def video_filter_handler(self):
         # filter supported by python-ffmpeg
         if self.video_filters.get('hflip'):
-            self.stream = ffmpeg.hflip(self.stream)
+            self.stream_video = self.stream_video.hflip()
         if self.video_filters.get('vflip'):
-            self.stream = ffmpeg.vflip(self.stream)
-
-        # custom filters
-
-        # def outer_crop_value(dct, *directions):
-        #     keys = dict(dct).keys()
-        #     for direction in directions:
-        #         if direction in keys:
-        #             return dict(dct).get(direction)
-        #     return -1
-
-        if len(self.video_filters) > 0:
-            # filter_args = {}
-            logging.debug('has filter')
-            key_list = list(self.video_filters.keys())
-            if 'fps' in key_list:
-                # fps_v = self.filters.get('fps')
-                self.stream = ffmpeg.filter(self.stream, 'fps', fps=self.video_filters.get('fps'))
-
-            # issues:
-            # wrong cutting logic
-            # if 'outer_crop' in key_list:
-            #     dct = self.filters.get('outer_crop')
-            #     logging.debug('crop outer value : %s' % dct)
-            #     crop_arg = {}
-            #
-            #     l = outer_crop_value(dct, 'l', 'left')
-            #     t = outer_crop_value(dct, 't', 'top')
-            #     b = outer_crop_value(dct, 'b', 'bottom')
-            #     r = outer_crop_value(dct, 'r', 'right')
-            #
-            #     no_crop_w = True if l < 0 and r < 0 else False
-            #     no_crop_h = True if b < 0 and t < 0 else False
-            #
-            #     logging.debug('left: %s, bottom: %s, right: %s, top: %s' % (l, b, r, t))
-            #
-            #     #begin
-            #     # logging.debug('use default width (w): %s; use default height (h): %s' % (no_crop_w, no_crop_h))
-            #     x = '(in_w-out_w)/2' if no_crop_w else str(l)
-            #     y = '(in_h-out_h)/2' if no_crop_h else str(t)
-            #
-            #     w = 'iw' if no_crop_w else 'iw-' + str(l + r)
-            #     h = 'ih' if no_crop_h else 'ih-' + str(t + b)
-            #     logging.debug('x:%s, y:%s, w:%s, h:%s' % (x, y, w, h))
-            #
-            #     crop_arg.update({w: None, h: None, x: None, y: None})
-            #     # logging.debug('crop args : %s' % crop_arg)
-            #     self.stream = ffmpeg.filter(self.stream, 'crop', *crop_arg)
-
-            if 'crop' in key_list:
-                logging.debug('crop args : %s' % self.video_filters.get('crop'))
-                self.stream = ffmpeg.filter(self.stream, 'crop', *self.video_filters.get('crop'))
-        return self.stream
+            self.stream_video = self.stream_video.vflip()
+        if self.video_filters.get('fps'):
+            self.stream_video = self.stream_video.filter('fps', self.video_filters.get('fps'))
+        if self.video_filters.get('transpose'):
+            self.stream_video = self.stream_video.filter('transpose', self.video_filters.get('transpose'))
+        if self.video_filters.get('crop'):
+            self.stream_video = self.stream_video.filter('crop', *self.video_filters.get('crop'))
+        if self.video_filters.get('vfilter'):
+            self.stream_video = self.stream_video.filter(*self.video_filters.get('vfilter'))
 
     def output_handler(self, input_file):
         def auto_increment(start, width):
@@ -208,12 +168,15 @@ class Stream:
                     start_value = int(v)
                     logging.debug('start: %s, width: %s' % (start_value, width_value))
                     self.output_name += auto_increment(start_value, width_value)
-
                 elif k is 'date':
                     logging.debug('date: %s' % v)
                     '''
                     TODO
                     '''
+
+            if 'ext' not in self.raw_output_name:
+                self.output_name += ext
+
             logging.debug('now output name : %s' % self.output_name)
         self.output_file = result_path / self.output_name
 
