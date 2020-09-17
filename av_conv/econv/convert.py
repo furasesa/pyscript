@@ -25,6 +25,7 @@ class Stream:
         self.global_options = get_global_args()
         self.main_options = get_main_args()
         self.video_filters = get_video_filter_args()
+        self.audio_filters = get_audio_filter_args()
 
         self.special_options = get_special_args()
         self.functional_options = get_fuctional_args()
@@ -64,8 +65,9 @@ class Stream:
         self.global_args_handler()
         self.special_option_handler()
 
-        # return self.stream
+        # return filter complex
         self.video_filter_handler()
+        self.audio_filter_handler()
 
         # output handler
         self.output_handler(input_file)
@@ -127,6 +129,12 @@ class Stream:
             self.stream_video = self.stream_video.filter('crop', *self.video_filters.get('crop'))
         if self.video_filters.get('vfilter'):
             self.stream_video = self.stream_video.filter(*self.video_filters.get('vfilter'))
+
+    def audio_filter_handler(self):
+        if self.audio_filters.get('aecho'):
+            self.stream_audio = self.stream_audio.filter('aecho', *self.audio_filters.get('aecho'))
+        if self.audio_filters.get('volume'):
+            self.stream_audio = self.stream_audio.filter('volume', self.audio_filters.get('volume'))
 
     def output_handler(self, input_file):
         def auto_increment(start, width):

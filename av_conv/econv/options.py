@@ -192,12 +192,27 @@ h=ih-40 for each top and bottom are -20
                                     )
 
     audio_filter_group = parser.add_argument_group('audio filter group')
+    audio_filter_group.add_argument('-aecho',
+                                    dest='aecho',
+                                    type=yaml.load,
+                                    action='store',
+                                    help='''aecho (in_gain, out_gain, delay, decay)
+e.g. -aecho {'0.8, 0.9, 1000, 0.3'}'''
+                                    )
+    audio_filter_group.add_argument('-vol', '--volume',
+                                    dest='volume',
+                                    type=str,
+                                    action='store',
+                                    help='''value: 0.5 1.5 or 10dB -5dB
+e.g. -vol 10dB --volume 10dB -vol 1.5; for negative value: -vol=-10db or -vol 0.5'''
+                                    )
+
     audio_filter_group.add_argument('-af',
                                     dest='afilter',
                                     type=yaml.load,
                                     action='store',
-                                    help='''e.g. aecho in_gain, out_gain, delay, decay
-filter {aecho: '0.8, 0.9, 1000, 0.3'}'''
+                                    help='''loudnorm = loud normalization
+}'''
                                     )
 
     # special group
@@ -254,7 +269,7 @@ e.g. -rotm or --metadata-rotation 90 -c:v copy -c:a copy
                                  action='store_true',
                                  help='requires if you need to show all files in folder'
                                  )
-    fuctional_group.add_argument('-o', '--out',
+    fuctional_group.add_argument('-o',
                                  dest='out',
                                  type=yaml.load,
                                  action='store',
@@ -334,7 +349,7 @@ def get_video_filter_args():
     filter supported by python-ffmpeg :
     colorchannelmixer, concat, crop, drawbox, drawtext, filter, filter_, filter_multi_output,
     hflip, hue, overlay, setpts, trim, vflip, zoompan
-    :return: filter_args
+    :return: video_filter_args
     """
     conversion_validation(video_filter_args, 'fps')
     conversion_validation(video_filter_args, 'crop')
@@ -349,13 +364,13 @@ def get_video_filter_args():
 
 def get_audio_filter_args():
     """
-    filter supported by python-ffmpeg :
-    colorchannelmixer, concat, crop, drawbox, drawtext, filter, filter_, filter_multi_output,
-    hflip, hue, overlay, setpts, trim, vflip, zoompan
-    :return: filter_args
-    """
-    conversion_validation(audio_filter_args, 'afilter')
+    audio filter :
 
+    :return: audio_filter_args
+    """
+    conversion_validation(audio_filter_args, 'aecho')
+    conversion_validation(audio_filter_args, 'volume')
+    conversion_validation(audio_filter_args, 'afilter')
     return audio_filter_args
 
 
