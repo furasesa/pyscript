@@ -9,7 +9,7 @@ from .options import get_fuctional_args
 from .options import get_raw_output
 
 
-from datetime import date
+from datetime import datetime
 import pathlib
 import logging
 
@@ -38,6 +38,7 @@ class Stream:
         self.auto_increment = -1
         self.output_name = ''
         self.output_file = None
+        self.total_file = 0
 
     def kwargs_generator(self):
         # kwargs = self.options.get('kwargs')
@@ -54,6 +55,9 @@ class Stream:
 
         logging.debug('kwargs: %s' % self.kwargs)
         return self.kwargs
+
+    def num_selected_file(self, v):
+        self.total_file = v
 
     def input(self, input_file):
         # set input stream
@@ -176,11 +180,17 @@ class Stream:
                     start_value = int(v)
                     logging.debug('start: %s, width: %s' % (start_value, width_value))
                     self.output_name += auto_increment(start_value, width_value)
-                elif k is 'date':
-                    logging.debug('date: %s' % v)
-                    '''
-                    TODO
-                    '''
+                elif k == 'date':
+                    now = datetime.now()
+                    dt_string = now.strftime(v)
+                    logging.debug('date: %s' % dt_string)
+                    self.output_name += dt_string
+                elif k == 'cnt':
+                    logging.debug('total selected file: %s' % self.total_file)
+                    self.output_name += str(self.total_file)
+                else:
+                    logging.debug('add string: %s' % k)
+                    self.output_name += str(k)
 
             if 'ext' not in self.raw_output_name:
                 self.output_name += ext

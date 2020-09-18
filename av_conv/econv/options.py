@@ -25,7 +25,8 @@ e.g. -kw "{vcodec: libaom-av1, t: 10, crf: 30, video_bitrate: 0, strict: experim
 contrained quality : 
 e.g. -kw "{vcodec: libaom-av1, t: 5, cpu-used: 5, crf: 30, video_bitrate: 2000, strict: experimental}"
 e.g. -kw "{vcodec: libaom-av1, t: 5, minrate: 500, video_bitrate: 2000, maxrate: 2500, strict: experimental}"
-When muxing into MP4, you may want to add -movflags +faststart to the output parameters if the intended use for the resulting file is streaming
+When muxing into MP4, you may want to add -movflags +faststart to the output parameters 
+if the intended use for the resulting file is streaming
 bitstream filter -bsf switch
 '''
     )
@@ -74,7 +75,7 @@ bitstream filter -bsf switch
     main_group.add_argument('-cv',
                             dest='vcodec',
                             action='store',
-                            help='video codec. hevc, h264, libx264, libvpx-vp9, libaom-av1, etc\nsee: ffmpeg -codecs')
+                            help='video codec. hevc, h264, libx264, libvpx-vp9,libaom-av1, etc\nsee: ffmpeg -codecs')
     main_group.add_argument('-ca',
                             dest='acodec',
                             action='store',
@@ -211,28 +212,11 @@ e.g. -vol 10dB --volume 10dB -vol 1.5; for negative value: -vol=-10db or -vol 0.
                                     dest='afilter',
                                     type=yaml.load,
                                     action='store',
-                                    help='''loudnorm = loud normalization
-}'''
+                                    help='''see: https://ffmpeg.org/ffmpeg-filters.html#Audio-Filters'''
                                     )
 
     # special group
     special_group = parser.add_argument_group('special group')
-
-    #     video_filter_group.add_argument('-cro', '--crop-outer',
-    #                         dest='outer_crop',
-    #                         type=yaml.load,
-    #                         action='store',
-    #                         help='''
-    # e.g. to crop top of 100px and bottom 50px
-    # -cr "{iw, ih-150, 0, ih-50}"    result crop=iw:ih-150:0:ih-50
-    # -cro "{b: 50, t: 100}"          result crop=iw-0:ih-150:0:ih-50
-    #
-    # e.g. to crop left=10, right=10, top=20, bottom=20
-    # -cr "{in_w-20, in_h-40}"            result crop=iw-20:ih-40
-    # -cro "{l: 10, r: 10, t: 20, b: 20}" result crop=iw-20:ih-40:10:ih-20 wrong
-    # '''
-    #                         )
-
     special_group.add_argument('-rotm', '--metadata-rotation',
                                dest='meta_rotation',
                                type=int,
@@ -274,11 +258,26 @@ e.g. -rotm or --metadata-rotation 90 -c:v copy -c:a copy
                                  type=yaml.load,
                                  action='store',
                                  help='''
-supported format name, auto_increment (ai), extension (ext)
+supported format name, auto_increment (ai), extension (ext), date (date), count (cnt)
+name is string standard format.
+
+ai (auto increment). ai: 1 will start from 1, thus ai: 01 start from 01,
 e.g. -o "{name: example, ai: '007', ext: mkv}"
 output: example007.mkv, example008.mkv, ..., example099.mkv,... etc
-e.g. -o "{ai: '02', name: example, ext: mkv}"
-output: 02example.mkv, 03example.mkv, ..., 10example... etc
+
+ext (extension). if None, the ext name is same as input. 
+if defined all files selected are same file extension.
+
+date format :
+year = y: 2 digit Y: 4 digit
+month = m: number B: name (Jan, Feb, so on)
+day = d, H = hour, M: minute, S: second
+e.g "{date: '%y%m%d-%H%M'}" output: 200918-0938
+
+count (cnt). Total files selected.
+other than above are treat like string or conjunction
+e.g. "{date: '%y%m%d, name: _sequence_, ai: 1, _of_, cnt'}"
+output: 20200918_sequence_1_of_4.flv; ....., 20200918_sequence_4_of_4.mkv
 '''
                                  )
 
