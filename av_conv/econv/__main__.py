@@ -1,6 +1,5 @@
 from .context import FileSelector
 from .context import Probe
-# from .options import parse_option
 from .options import get_fuctional_args
 from .convert import Stream
 import logging
@@ -9,7 +8,6 @@ import pathlib
 from prompt_toolkit.shortcuts import yes_no_dialog
 import sys
 
-# options = parse_option()
 options = get_fuctional_args()
 
 def to_second(time_str):

@@ -1,11 +1,7 @@
-from .options import parse_option
+from .options import get_global_args
 import logging
 
-parsed_arg = parse_option()
-logging_level = vars(parsed_arg).get('verbosity')*10
-logging.basicConfig(level=logging_level, format='(%(threadName)-10s) %(levelname)s\t%(module)s\t:: %(funcName)10s : %(message)s', )
-# logging.debug('debug')
-# logging.info('info')
-# logging.warning('warning')
-# logging.error('error')
-# logging.critical('critical')
+options = get_global_args()
+logging_level = options.get('verbosity')*10
+logging.basicConfig(level=logging_level, format='(%(threadName)-10s) %(levelname)s\t%(module)s\t::'
+                                                ' %(funcName)10s : %(message)s', )

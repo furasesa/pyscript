@@ -1,51 +1,30 @@
 import argparse
 import yaml
 import logging
+import textwrap as _textwrap
+import re
 
 
 def parse_option():
     parser = argparse.ArgumentParser(
-        description='''
-installing:
-pip install -r requirements.txt
-python setup.py install
-usage:
-python -m econv -d 'path to directory' [args or kwargs] [filters] [switches]
-all switches are -- prefixes but -y (overwrite)
-for help :
-python -m econv -h
-''',
-        formatter_class=argparse.RawTextHelpFormatter,
-        epilog='''
-e.g. -kw "{codec: copy, bsf:v: h264_mp4toannexb, t: 10}"
-experimental of libaom-av1
-constant quality : 
-originally : ffmpeg -i input.mp4 -c:v libaom-av1 -crf 30 -b:v 0 -t 10 -strict experimental out.mp4
-e.g. -kw "{vcodec: libaom-av1, t: 10, crf: 30, video_bitrate: 0, strict: experimental}"
-contrained quality : 
-e.g. -kw "{vcodec: libaom-av1, t: 5, cpu-used: 5, crf: 30, video_bitrate: 2000, strict: experimental}"
-e.g. -kw "{vcodec: libaom-av1, t: 5, minrate: 500, video_bitrate: 2000, maxrate: 2500, strict: experimental}"
-When muxing into MP4, you may want to add -movflags +faststart to the output parameters 
-if the intended use for the resulting file is streaming
-bitstream filter -bsf switch
-'''
-    )
+        prog='econv',
+        formatter_class=argparse.RawTextHelpFormatter, )
     # global options
     global_group = parser.add_argument_group('global options')
     global_group.add_argument('-v', '--verbosity',
                               dest='verbosity',
                               type=int,
                               action='store',
-                              default=4,
+                              default=2,
                               choices=range(1, 6, 1),
-                              help='''
+                              help='''Verbosity level.
     1 - DEBUG
     2 - INFO
     3 - WARNING
     4 - ERROR
     5 - CRITICAL
-    default is 4
-    '''
+default is 2 (INFO)
+'''
                               )
     global_group.add_argument('-y', '--y',
                               dest='overwrite',
@@ -62,7 +41,7 @@ bitstream filter -bsf switch
     main_group = parser.add_argument_group('main options')
     main_group.add_argument('-ss',
                             action='store',
-                            help='''Trim Start'''
+                            help='Trim start'
                             )
     main_group.add_argument('-t',
                             action='store',
@@ -75,34 +54,31 @@ bitstream filter -bsf switch
     main_group.add_argument('-cv',
                             dest='vcodec',
                             action='store',
-                            help='video codec. hevc, h264, libx264, libvpx-vp9,libaom-av1, etc\nsee: ffmpeg -codecs')
+                            help='video codec. hevc, h264, libx264, libvpx-vp9,libaom-av1, etc.')
     main_group.add_argument('-ca',
                             dest='acodec',
                             action='store',
-                            help='audio codec.aac, mp3, wav, flac, etc.\nsee: ffmpeg -codecs'
+                            help='audio codec.aac, mp3, wav, flac, etc.'
                             )
     main_group.add_argument('-bv',
                             dest='video_bitrate',
                             action='store',
-                            help='video bitrate'
+                            help='video bitrate. example: 1M, 768k'
                             )
     main_group.add_argument('-ba',
                             dest='audio_bitrate',
                             action='store',
-                            help='audio bitrate'
+                            help='audio bitrate, example: 192k, 128k'
                             )
     main_group.add_argument('-crf',
                             action='store',
-                            help=
-                            '''The range of the CRF scale is 0–51, where 0 is lossless, 23 is the default, 
+                            help='''The range of the CRF scale is 0–51, where 0 is lossless, 23 is the default, 
 and 51 is worst quality possible.
-e.g. ffmpeg -i input -c:v libx264 -crf 21
-'''
-                            )
+''')
     main_group.add_argument('-f',
                             dest='format',
                             action='store',
-                            help='output format. concat, segment, matroska, mp4, etc.\n see ffmpeg -formats'
+                            help='output format. concat, segment, matroska, mp4, etc. see ffmpeg -formats'
                             )
 
     main_group.add_argument('-c',
@@ -110,7 +86,6 @@ e.g. ffmpeg -i input -c:v libx264 -crf 21
                             action='store',
                             help='codec. -c copy. see ffmpeg -codecs'
                             )
-
     main_group.add_argument('-kw', '--kwargs',
                             dest='kwargs',
                             action='store',
@@ -140,8 +115,7 @@ e.g. -kw "{vcodec: libx264, t: 20, acodec: aac, f: mp4, crf: 20}"
                                     dest='crop',
                                     type=yaml.load,
                                     action='store',
-                                    help='''
-full help : https://ffmpeg.org/ffmpeg-filters.html#crop
+                                    help='''full help : https://ffmpeg.org/ffmpeg-filters.html#crop
 format -cr "{w, h, x, y}"
 description:
 w, out_w, ow is width of the cropped region default to iw
@@ -169,27 +143,26 @@ h=ih-40 for each top and bottom are -20
 '''
                                     )
     video_filter_group.add_argument('-rot', '--rotate',
-                               dest='transpose',
-                               type=int,
-                               action='store',
-                               choices=range(0, 4, 1),
-                               help='''
-    video filter transpose. originally -vf transpose=number
-    0 - DEFAULT
-    1 - Rotate 90 Clockwise
-    2 - Rotate 90 Counter-Clockwise
-    3 - Rotate 90 Clockwise and flip
-    e.g.: -rot 1
-    -vf "{transpose, 1}"
-    -kw "{vf: transpose=1}"
-    transpose requires re-encoding. to avoid, please use -rotm
-    '''
+                                    dest='transpose',
+                                    type=int,
+                                    action='store',
+                                    choices=range(0, 4, 1),
+                                    help='''video filter transpose. originally -vf transpose=number
+0 - DEFAULT
+1 - Rotate 90 Clockwise
+2 - Rotate 90 Counter-Clockwise
+3 - Rotate 90 Clockwise and flip
+e.g.: -rot 1
+-vf "{transpose, 1}"
+-kw "{vf: transpose=1}"
+transpose requires re-encoding. to avoid, please use -rotm
+'''
                                     )
     video_filter_group.add_argument('-vf',
                                     dest='vfilter',
                                     type=yaml.load,
                                     action='store',
-                                    help='''-vf "{fps, 24}". -vf "{transpose, 1}"'''
+                                    help='-vf "{fps, 24}". -vf "{transpose, 1}"'
                                     )
 
     audio_filter_group = parser.add_argument_group('audio filter group')
@@ -272,11 +245,11 @@ date format :
 year = y: 2 digit Y: 4 digit
 month = m: number B: name (Jan, Feb, so on)
 day = d, H = hour, M: minute, S: second
-e.g "{date: '%y%m%d-%H%M'}" output: 200918-0938
+e.g "{date: '%%y%%m%%d-%%H%%M'}" output: 200918-0938
 
 count (cnt). Total files selected.
 other than above are treat like string or conjunction
-e.g. "{date: '%y%m%d, name: _sequence_, ai: 1, _of_, cnt'}"
+e.g. "{date: '%%y%%m%%d', name: _sequence_, ai: 1, _of_, cnt}"
 output: 20200918_sequence_1_of_4.flv; ....., 20200918_sequence_4_of_4.mkv
 '''
                                  )
