@@ -2,13 +2,19 @@ import argparse
 import yaml
 import logging
 import textwrap as _textwrap
-import re
+import os
 
+# os.environ['COLUMNS'] = "56"
+
+class LineWrapRawTextHelpFormatter(argparse.RawDescriptionHelpFormatter):
+    def _split_lines(self, text, width):
+        text = self._whitespace_matcher.sub(' ', text).strip()
+        return _textwrap.wrap(text, width)
 
 def parse_option():
     parser = argparse.ArgumentParser(
         prog='econv',
-        formatter_class=argparse.RawTextHelpFormatter, )
+        formatter_class=LineWrapRawTextHelpFormatter, )
     # global options
     global_group = parser.add_argument_group('global options')
     global_group.add_argument('-v', '--verbosity',
