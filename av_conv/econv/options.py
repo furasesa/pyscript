@@ -9,15 +9,15 @@ import re
 
 class LineWrapRawTextHelpFormatter(argparse.RawTextHelpFormatter):
     def __add_whitespace(self, idx, iw_space, text):
-        if idx is 0:
+        if idx == 0:
             return text
         return (" " * iw_space) + text
 
     def _split_lines(self, text, width):
         text_rows = text.splitlines()
-        for idx,line in enumerate(text_rows):
+        for idx, line in enumerate(text_rows):
             search = re.search('\s*[0-9\-]{0,}\.?\s*', line)
-            if line.strip() is "":
+            if line.strip() == "":
                 text_rows[idx] = " "
             elif search:
                 lw_space = search.end()
