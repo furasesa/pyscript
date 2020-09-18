@@ -2,14 +2,29 @@ import argparse
 import yaml
 import logging
 import textwrap as _textwrap
-import os
-
+import re
+# import os
 # os.environ['COLUMNS'] = "56"
 
-class LineWrapRawTextHelpFormatter(argparse.RawDescriptionHelpFormatter):
+
+class LineWrapRawTextHelpFormatter(argparse.RawTextHelpFormatter):
+    def __add_whitespace(self, idx, iw_space, text):
+        if idx is 0:
+            return text
+        return (" " * iw_space) + text
+
     def _split_lines(self, text, width):
-        text = self._whitespace_matcher.sub(' ', text).strip()
-        return _textwrap.wrap(text, width)
+        text_rows = text.splitlines()
+        for idx,line in enumerate(text_rows):
+            search = re.search('\s*[0-9\-]{0,}\.?\s*', line)
+            if line.strip() is "":
+                text_rows[idx] = " "
+            elif search:
+                lw_space = search.end()
+                lines = [self.__add_whitespace(i, lw_space, x) for i,x in enumerate(_textwrap.wrap(line, width))]
+                text_rows[idx] = lines
+
+        return [item for sublist in text_rows for item in sublist]
 
 def parse_option():
     parser = argparse.ArgumentParser(
@@ -60,7 +75,7 @@ default is 2 (INFO)
     main_group.add_argument('-cv',
                             dest='vcodec',
                             action='store',
-                            help='video codec. hevc, h264, libx264, libvpx-vp9,libaom-av1, etc.')
+                            help='video codec. hevc, h264, libx264, libvpx-vp9, etc')
     main_group.add_argument('-ca',
                             dest='acodec',
                             action='store',
@@ -78,9 +93,8 @@ default is 2 (INFO)
                             )
     main_group.add_argument('-crf',
                             action='store',
-                            help='''The range of the CRF scale is 0–51, where 0 is lossless, 23 is the default, 
-and 51 is worst quality possible.
-''')
+                            help='The range of the CRF scale is 0–51, where 0 is lossless, 23 is the default, and 51 is worst quality possible.'
+                            )
     main_group.add_argument('-f',
                             dest='format',
                             action='store',
@@ -96,10 +110,7 @@ and 51 is worst quality possible.
                             dest='kwargs',
                             action='store',
                             type=yaml.load,
-                            help='''usage -kw --kwargs "{dict}".
-for custom arguments. format : -kw "{-map: 0, vn: None, metadata:s:v: rotate=90}" 
-e.g. -kw "{vcodec: libx264, t: 20, acodec: aac, f: mp4, crf: 20}"
-'''
+                            help='usage -kw --kwargs "{dict}".for custom arguments. format : -kw "{-map: 0, vn: None, metadata:s:v: rotate=90}" '
                             )
     video_filter_group = parser.add_argument_group('video filters')
     video_filter_group.add_argument('-fps',
@@ -124,24 +135,15 @@ e.g. -kw "{vcodec: libx264, t: 20, acodec: aac, f: mp4, crf: 20}"
                                     help='''full help : https://ffmpeg.org/ffmpeg-filters.html#crop
 format -cr "{w, h, x, y}"
 description:
-w, out_w, ow is width of the cropped region default to iw
-h, out_h, oh is height of the cropped region default to ih
-in_w, iw is input width. aka input resolution (native resolution)
+w, out_w, ow is width of the cropped region
+default is iw. and h, out_h, oh for height
+in_w, iw is input width. so in_h or ih
 x is x pos; and y is y pos. 
-e.g. x=0, y=0 is top left;
-x, y blank means center of iw default to (in_w-out_w)/2 or (in_h-out_h)/2
-the region w is xxx pixel to right, h is xxx pixel to top.
-once x or y pos are specified, w=pixel region+x pixel, so h and y
+x, y default value (in_w-out_w)/2 or (in_h-out_h)/2
 
-e.g. to crop top of 100px and bottom 50px
--cr "{iw, ih-150, 0, ih-50}"
-imagine that x= left -> x=0, y is 50px from bottom so y=50
-create region so width is no change, means w=iw (original width size)
-height region is top (ih) - (100px+ypos) so, h=ih-150
-finnaly : {w=iw, h=ih-150, x=0, y=50 }
-
-e.g. to crop left=10, right=10, top=20, bottom=20
--cr "{in_w-2*10, in_h-2*20}" or -cr "{in_w-20, in_h-40}"
+example to crop left=10, right=10, top=20, bottom=20
+-cr "{in_w-2*10, in_h-2*20}" or 
+-cr "{in_w-20, in_h-40}"
 x:y is zero mean at center position.
 crop region :
 w=iw-20 for each left and right side are -10
@@ -154,14 +156,14 @@ h=ih-40 for each top and bottom are -20
                                     action='store',
                                     choices=range(0, 4, 1),
                                     help='''video filter transpose. originally -vf transpose=number
-0 - DEFAULT
-1 - Rotate 90 Clockwise
-2 - Rotate 90 Counter-Clockwise
-3 - Rotate 90 Clockwise and flip
+    0 - DEFAULT
+    1 - Rotate 90 Clockwise
+    2 - Rotate 90 Counter-Clockwise
+    3 - Rotate 90 Clockwise and flip
 e.g.: -rot 1
 -vf "{transpose, 1}"
 -kw "{vf: transpose=1}"
-transpose requires re-encoding. to avoid, please use -rotm
+transpose requires re-encoding. to avoid that, please use -rotm
 '''
                                     )
     video_filter_group.add_argument('-vf',
@@ -176,8 +178,7 @@ transpose requires re-encoding. to avoid, please use -rotm
                                     dest='aecho',
                                     type=yaml.load,
                                     action='store',
-                                    help='''aecho (in_gain, out_gain, delay, decay)
-e.g. -aecho {'0.8, 0.9, 1000, 0.3'}'''
+                                    help='aecho (in_gain, out_gain, delay, decay) e.g. -aecho "{0.8, 0.9, 1000, 0.3}"'
                                     )
     audio_filter_group.add_argument('-vol', '--volume',
                                     dest='volume',
@@ -196,7 +197,7 @@ e.g. -vol 10dB --volume 10dB -vol 1.5; for negative value: -vol=-10db or -vol 0.
 
     # special group
     special_group = parser.add_argument_group('special group')
-    special_group.add_argument('-rotm', '--metadata-rotation',
+    special_group.add_argument('-rotm',
                                dest='meta_rotation',
                                type=int,
                                action='store',
@@ -204,7 +205,7 @@ e.g. -vol 10dB --volume 10dB -vol 1.5; for negative value: -vol=-10db or -vol 0.
 rotation change by editing metadata.
 -metadata:s:v rotate="90" -codec copy
 this methode doesn't need re-encode, but player support.
-e.g. -rotm or --metadata-rotation 90 -c:v copy -c:a copy
+e.g. -rotm 90 -c:v copy -c:a copy
 '''
                                )
     special_group.add_argument('-an',
@@ -215,7 +216,7 @@ e.g. -rotm or --metadata-rotation 90 -c:v copy -c:a copy
     special_group.add_argument('-vn',
                                dest='vn',
                                action='store_true',
-                               help='similiar to an, but video. tak out a video from stream'
+                               help='similar to an, but video. take out a video from stream'
                                )
 
     # fuctional group
@@ -237,25 +238,30 @@ e.g. -rotm or --metadata-rotation 90 -c:v copy -c:a copy
                                  type=yaml.load,
                                  action='store',
                                  help='''
-supported format name, auto_increment (ai), extension (ext), date (date), count (cnt)
-name is string standard format.
+supported format name, 
+    1. auto_increment (ai), 
+    2. extension (ext), 
+    3. date (date), 
+    4. count (cnt)
+other than key above, treat as string
 
-ai (auto increment). ai: 1 will start from 1, thus ai: 01 start from 01,
+1. ai (auto increment).
+    ai: 1 will start from 1, thus ai: 01 start from 01,
 e.g. -o "{name: example, ai: '007', ext: mkv}"
 output: example007.mkv, example008.mkv, ..., example099.mkv,... etc
 
-ext (extension). if None, the ext name is same as input. 
-if defined all files selected are same file extension.
+2. ext (extension).
+    if None, the ext name is same as input. 
+    if defined all files selected are same file extension.
 
-date format :
-year = y: 2 digit Y: 4 digit
-month = m: number B: name (Jan, Feb, so on)
-day = d, H = hour, M: minute, S: second
+3. date (date).
+    year = y: 2 digit Y: 4 digit
+    month = m: number B: name
+    day = d, H = hour, M: minute, S: second
 e.g "{date: '%%y%%m%%d-%%H%%M'}" output: 200918-0938
 
-count (cnt). Total files selected.
-other than above are treat like string or conjunction
-e.g. "{date: '%%y%%m%%d', name: _sequence_, ai: 1, _of_, cnt}"
+4. cnt (count). Total files selected.
+-o "{date: '%%y%%m%%d', name: _sequence_, ai: 1, _of_, cnt}"
 output: 20200918_sequence_1_of_4.flv; ....., 20200918_sequence_4_of_4.mkv
 '''
                                  )
