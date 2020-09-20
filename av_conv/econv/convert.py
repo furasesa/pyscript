@@ -73,8 +73,8 @@ class Stream:
         self.stream_input = ffmpeg.input(str(input_file))
 
         # split stream if using filter complex handler
-        # self.stream_audio = self.stream_input.audio
-        # self.stream_video = self.stream_input.video
+        #self.stream_audio = self.stream_input.audio
+        #self.stream_video = self.stream_input.video
         self.filter_complex_handler()
 
         # invoke kwargs
@@ -152,11 +152,10 @@ class Stream:
 
     def audio_filter_handler(self):
         if not self.functional_options.get('filter_complex'):
-            logging.debug('no filter complex')
-            if self.audio_filters.get('aecho'):
-                self.stream = self.stream_input.filter('aecho', *self.audio_filters.get('aecho'))
+            # aecho is different format -af aecho=0.8:0.9:1000:0.3
             if self.audio_filters.get('volume'):
-                self.stream = self.stream_input.filter('volume', self.audio_filters.get('volume'))
+                logging.debug("set volume: %s" % self.audio_filters.get('volume'))
+                self.kwargs.update({'af': 'volume='+self.audio_filters.get('volume')})
         else:
             if self.audio_filters.get('aecho'):
                 self.stream_audio = self.stream_audio.filter('aecho', *self.audio_filters.get('aecho'))
@@ -234,3 +233,4 @@ class Stream:
         self.stream.run(
             overwrite_output=self.global_options.get('overwrite'),
         )
+
