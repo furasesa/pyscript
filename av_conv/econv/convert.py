@@ -199,7 +199,8 @@ class Stream:
                     logging.debug('name: %s' % v)
                     if v == 'auto' or v == '':
                         self.output_name += name
-                    self.output_name += v
+                    else:
+                        self.output_name += v
                 elif k == 'ext':
                     logging.debug('given ext: %s' % v)
                     self.output_name += '.'+v
