@@ -38,7 +38,10 @@ class Stream:
         self.auto_increment = -1
         self.output_name = ''
         self.output_file = None
+
+        # Seting
         self.total_file = 0
+        self.using_filter_complex = False
 
     def kwargs_generator(self):
         # kwargs = self.options.get('kwargs')
@@ -57,13 +60,22 @@ class Stream:
         return self.kwargs
 
     def num_selected_file(self, v):
+        # used for file counting
         self.total_file = v
+
+    # def filter_complex_handler(self):
+    #     if self.functional_options.get('filter_complex'):
+    #         self.stream_audio = self.stream_input.audio
+    #         self.stream_video = self.stream_input.video
 
     def input(self, input_file):
         # set input stream
         self.stream_input = ffmpeg.input(str(input_file))
+
+        # split stream if using filter complex handler
         self.stream_audio = self.stream_input.audio
         self.stream_video = self.stream_input.video
+        # self.filter_complex_handler()
 
         # invoke kwargs
         self.global_args_handler()
@@ -76,7 +88,11 @@ class Stream:
         # output handler
         self.output_handler(input_file)
         # output
-        self.stream = ffmpeg.output(self.stream_audio, self.stream_video, str(self.output_file), **self.kwargs)
+        if self.stream_video is None and self.stream_audio is None:
+            logging.debug("stream video ad stream_audio is None")
+            self.stream = ffmpeg.output(self.stream_input, str(self.output_file), **self.kwargs)
+        else:
+            self.stream = ffmpeg.output(self.stream_audio, self.stream_video, str(self.output_file), **self.kwargs)
         # switch handler
         if self.functional_options.get('test'):
             print(self.compile())
@@ -135,6 +151,13 @@ class Stream:
             self.stream_video = self.stream_video.filter(*self.video_filters.get('vfilter'))
 
     def audio_filter_handler(self):
+        # if not self.functional_options.get('filter_complex'):
+        #     logging.debug('no filter complex')
+        #     if self.audio_filters.get('aecho'):
+        #         self.stream = self.stream_input.filter('aecho', *self.audio_filters.get('aecho'))
+        #     if self.audio_filters.get('volume'):
+        #         self.stream = self.stream_input.filter('volume', self.audio_filters.get('volume'))
+        # else:
         if self.audio_filters.get('aecho'):
             self.stream_audio = self.stream_audio.filter('aecho', *self.audio_filters.get('aecho'))
         if self.audio_filters.get('volume'):
@@ -168,9 +191,14 @@ class Stream:
         else:
             # re init self.output_name
             self.output_name = ''
+            if 'name' not in self.raw_output_name:
+                logging.debug('name is not defined, use input name: %s' % name)
+                self.output_name = name
             for k, v in self.raw_output_name.items():
                 if k == 'name':
                     logging.debug('name: %s' % v)
+                    if v == 'auto' or v == '':
+                        self.output_name += name
                     self.output_name += v
                 elif k == 'ext':
                     logging.debug('given ext: %s' % v)
@@ -191,8 +219,8 @@ class Stream:
                 else:
                     logging.debug('add string: %s' % k)
                     self.output_name += str(k)
-
             if 'ext' not in self.raw_output_name:
+                logging.debug("extension is not defined, set ext: %s" % ext)
                 self.output_name += ext
 
             logging.debug('now output name : %s' % self.output_name)
