@@ -63,19 +63,19 @@ class Stream:
         # used for file counting
         self.total_file = v
 
-    # def filter_complex_handler(self):
-    #     if self.functional_options.get('filter_complex'):
-    #         self.stream_audio = self.stream_input.audio
-    #         self.stream_video = self.stream_input.video
+    def filter_complex_handler(self):
+        if self.functional_options.get('filter_complex'):
+            self.stream_audio = self.stream_input.audio
+            self.stream_video = self.stream_input.video
 
     def input(self, input_file):
         # set input stream
         self.stream_input = ffmpeg.input(str(input_file))
 
         # split stream if using filter complex handler
-        self.stream_audio = self.stream_input.audio
-        self.stream_video = self.stream_input.video
-        # self.filter_complex_handler()
+        # self.stream_audio = self.stream_input.audio
+        # self.stream_video = self.stream_input.video
+        self.filter_complex_handler()
 
         # invoke kwargs
         self.global_args_handler()
@@ -151,17 +151,17 @@ class Stream:
             self.stream_video = self.stream_video.filter(*self.video_filters.get('vfilter'))
 
     def audio_filter_handler(self):
-        # if not self.functional_options.get('filter_complex'):
-        #     logging.debug('no filter complex')
-        #     if self.audio_filters.get('aecho'):
-        #         self.stream = self.stream_input.filter('aecho', *self.audio_filters.get('aecho'))
-        #     if self.audio_filters.get('volume'):
-        #         self.stream = self.stream_input.filter('volume', self.audio_filters.get('volume'))
-        # else:
-        if self.audio_filters.get('aecho'):
-            self.stream_audio = self.stream_audio.filter('aecho', *self.audio_filters.get('aecho'))
-        if self.audio_filters.get('volume'):
-            self.stream_audio = self.stream_audio.filter('volume', self.audio_filters.get('volume'))
+        if not self.functional_options.get('filter_complex'):
+            logging.debug('no filter complex')
+            if self.audio_filters.get('aecho'):
+                self.stream = self.stream_input.filter('aecho', *self.audio_filters.get('aecho'))
+            if self.audio_filters.get('volume'):
+                self.stream = self.stream_input.filter('volume', self.audio_filters.get('volume'))
+        else:
+            if self.audio_filters.get('aecho'):
+                self.stream_audio = self.stream_audio.filter('aecho', *self.audio_filters.get('aecho'))
+            if self.audio_filters.get('volume'):
+                self.stream_audio = self.stream_audio.filter('volume', self.audio_filters.get('volume'))
 
     def output_handler(self, input_file):
         def auto_increment(start, width):

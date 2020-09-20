@@ -280,11 +280,11 @@ output: 20200918_sequence_1_of_4.flv; ....., 20200918_sequence_4_of_4.mkv
                                  action='store',
                                  help='generate for concat files. -d tests/confile --gen-concat test.txt'
                                  )
-    # fuctional_group.add_argument('--filter-complex',
-    #                              dest='filter_complex',
-    #                              action='store_true',
-    #                              help='try using filter complex.'
-    #                              )
+    fuctional_group.add_argument('--filter-complex',
+                                 dest='filter_complex',
+                                 action='store_true',
+                                 help='try using filter complex.'
+                                 )
 
     # return all options
     return parser.parse_args()
