@@ -47,15 +47,15 @@ def get_context(dct, all_key, *keys):
 
 
 class Probe(object):
-    def __init__(self, selected_files):
+    def __init__(self, stream_files):
         self.probed_file = []
         self.files_duration = []
         self.selected_probe = []
-        for probe_this in selected_files:
-            probe = ffmpeg.probe(probe_this)
-            self.probed_file.append((probe_this, probe))
+        for stream in stream_files:
+            probe = ffmpeg.probe(stream)
+            self.probed_file.append((stream, probe))
 
-    def get_av_context(self):
+    def get_probed_file(self):
         logging.debug('probed file %s' % len(self.probed_file))
         return self.probed_file
 
