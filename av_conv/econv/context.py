@@ -48,22 +48,22 @@ def get_context(dct, all_key, *keys):
 
 class Probe(object):
     def __init__(self, stream_files):
-        self.probed_file = []
+        self.probed_files = []
         self.files_duration = []
         self.selected_probe = []
         for stream in stream_files:
             probe = ffmpeg.probe(stream)
-            self.probed_file.append((stream, probe))
+            self.probed_files.append((stream, probe))
 
-    def get_probed_file(self):
-        logging.debug('probed file %s' % len(self.probed_file))
-        return self.probed_file
+    def get_probed_files(self):
+        # logging.debug('probed file %s' % len(self.probed_files))
+        return self.probed_files
 
     def get_duration(self):
-        if len(self.probed_file) == 0:
+        if len(self.probed_files) == 0:
             logging.error('probed file is zero')
         else:
-            for file, p in self.probed_file:
+            for file, p in self.probed_files:
                 video_context = next((s for s in p['streams'] if s['codec_type'] == 'video'), None)
                 audio_context = next((s for s in p['streams'] if s['codec_type'] == 'audio'), None)
                 print('file : %s\nvideo stream :%s\n\naudio stream: %s\n' % (file, video_context, audio_context))

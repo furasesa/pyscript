@@ -10,6 +10,7 @@ import sys
 
 options = get_fuctional_args()
 
+
 def to_second(time_str):
     try:
         return reduce(lambda x, y: x * 60 + float(y), time_str.split(":"), 0)
@@ -24,7 +25,7 @@ def to_second(time_str):
 if __name__ == '__main__':
     stream = Stream()
     concat_file = options.get('gen_concat')
-    use_probe = options.get('probe')
+    print_probed_file = options.get('probe')
     # check if exist, replace or write to next line
     if concat_file is not None:
         p = pathlib.Path(concat_file)
@@ -39,17 +40,18 @@ if __name__ == '__main__':
     directory = FileSelector(options.get('directory'))
     working_dir = directory.get_full_path()
     selected_file = directory.get_selected_files()
-    stream.num_selected_file(len(selected_file))
 
-    if use_probe:
-        probe = Probe(selected_file)
-        probe.get_av_context()
-        probed_duration = probe.get_duration()
-        # for filename, duration in probed_duration:
-        #     # print('filename : '+filename+'\tduration: '+str(duration))
-        #     print('filename : %s\tduration: %s\n' % (filename, duration))
+    # probe context
+    probe = Probe(selected_file)
+    stream.set_probed_streams(probe.get_probed_files())
 
+    if print_probed_file:
+        # probed_duration = probe.get_duration()
+        print(probe.get_probed_files())
+
+    # writing concat list to file
     if concat_file is not None:
+        # generating concat file, skip conversion
         logging.info('writing %s for concatenate' % concat_file)
         with open(concat_file, 'a') as concat_writer:
             for f in selected_file:
@@ -57,7 +59,9 @@ if __name__ == '__main__':
                 concat_writer.write('file \''+str(f)+'\'\n')
 
     else:
-        for file_input in selected_file:
-            logging.debug('file input : %s' % file_input)
-
-            stream.input(file_input)
+        # conversion
+        stream.setup_stream()
+        stream.run()
+        # for file_input in selected_file:
+        #     logging.debug('file input : %s' % file_input)
+        #     stream.input(file_input)
