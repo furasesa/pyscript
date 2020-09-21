@@ -7,29 +7,28 @@ import re
 # os.environ['COLUMNS'] = "56"
 
 
-class LineWrapRawTextHelpFormatter(argparse.RawTextHelpFormatter):
-    def __add_whitespace(self, idx, iw_space, text):
-        if idx == 0:
-            return text
-        return (" " * iw_space) + text
-
-    def _split_lines(self, text, width):
-        text_rows = text.splitlines()
-        for idx, line in enumerate(text_rows):
-            search = re.search('\s*[0-9\-]{0,}\.?\s*', line)
-            if line.strip() == "":
-                text_rows[idx] = " "
-            elif search:
-                lw_space = search.end()
-                lines = [self.__add_whitespace(i, lw_space, x) for i,x in enumerate(_textwrap.wrap(line, width))]
-                text_rows[idx] = lines
-
-        return [item for sublist in text_rows for item in sublist]
+# class LineWrapRawTextHelpFormatter(argparse.RawTextHelpFormatter):
+#     def __add_whitespace(self, idx, iw_space, text):
+#         if idx == 0:
+#             return text
+#         return (" " * iw_space) + text
+#
+#     def _split_lines(self, text, width):
+#         text_rows = text.splitlines()
+#         for idx, line in enumerate(text_rows):
+#             search = re.search('\s*[0-9\-]{0,}\.?\s*', line)
+#             if line.strip() == "":
+#                 text_rows[idx] = " "
+#             elif search:
+#                 lw_space = search.end()
+#                 lines = [self.__add_whitespace(i, lw_space, x) for i,x in enumerate(_textwrap.wrap(line, width))]
+#                 text_rows[idx] = lines
+#
+#         return [item for sublist in text_rows for item in sublist]
 
 def parse_option():
     parser = argparse.ArgumentParser(
-        prog='econv',
-        formatter_class=LineWrapRawTextHelpFormatter, )
+        formatter_class=argparse.RawTextHelpFormatter, )
     # global options
     global_group = parser.add_argument_group('global options')
     global_group.add_argument('-v', '--verbosity',
@@ -281,6 +280,11 @@ output: 20200918_sequence_1_of_4.flv; ....., 20200918_sequence_4_of_4.mkv
                                  action='store',
                                  help='generate for concat files. -d tests/confile --gen-concat test.txt'
                                  )
+    fuctional_group.add_argument('--filter-complex',
+                                 dest='filter_complex',
+                                 action='store_true',
+                                 help='try using filter complex.'
+                                 )
 
     # return all options
     return parser.parse_args()
@@ -373,6 +377,7 @@ def get_fuctional_args():
     conversion_validation(functional_args, 'probe')
     conversion_validation(functional_args, 'gen_concat')
     conversion_validation(functional_args, 'test')
+    conversion_validation(functional_args, 'filter_complex')
     return functional_args
 
 

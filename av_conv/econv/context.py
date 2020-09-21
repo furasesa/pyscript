@@ -14,7 +14,7 @@ import sys
 
 parser = parse_option()
 video_ext = ["*.mp4", "*.avi", "*.flv", "*.3gp", "*.ts", "*.mpg", "*.mov", "*.mkv"]  # video
-audio_ext = ["*.mp3", "*.aac", "*.webm", "*.flac", "*.wav"]  # audio
+audio_ext = ["*.mp3", "*.aac", "*.webm", "*.flac", "*.wav", "*.m4a"]  # audio
 supported_ext = video_ext + audio_ext
 
 all_ext = vars(parser).get('all_ext')
