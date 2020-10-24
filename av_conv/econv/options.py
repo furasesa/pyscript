@@ -280,6 +280,11 @@ output: 20200918_sequence_1_of_4.flv; ....., 20200918_sequence_4_of_4.mkv
                                  action='store',
                                  help='generate for concat files. -d tests/confile --gen-concat test.txt'
                                  )
+    fuctional_group.add_argument('--combine',
+                                 dest='combine',
+                                 action='store_true',
+                                 help='combining multiple input'
+                                 )
     # fuctional_group.add_argument('--filter-complex',
     #                              dest='filter_complex',
     #                              action='store_true',
@@ -377,6 +382,7 @@ def get_fuctional_args():
     conversion_validation(functional_args, 'probe')
     conversion_validation(functional_args, 'gen_concat')
     conversion_validation(functional_args, 'test')
+    conversion_validation(functional_args, 'combine')
     # conversion_validation(functional_args, 'filter_complex')
     return functional_args
 
