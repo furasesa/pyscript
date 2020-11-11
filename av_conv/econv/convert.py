@@ -147,7 +147,7 @@ class Stream:
 
     def audio_filter_handler(self):
         def update(filter_name):
-            if filter_name is 'aecho':
+            if filter_name == 'aecho':
                 logging.debug('special filter handler: aecho')
                 if self.stream_audio is not None:
                     self.stream_audio = self.stream_audio.filter(
