@@ -74,7 +74,7 @@ class Stream:
         # set probed stream list
         self.probed_streams = probed_streams
 
-    def setup_stream(self):
+    def convert(self):
         for probed_file, probe in self.probed_streams:
             self.working_file = probed_file
             logging.debug('working file: %s' % self.working_file)
@@ -93,6 +93,8 @@ class Stream:
             if audio_context is not None:
                 self.stream_audio = self.stream_input.audio
                 logging.debug("stream audio type: %s" % self.stream_audio)
+            # run here
+            self.run()
 
     def global_args_handler(self):
         # global Nodes such as -y -loglevel

@@ -60,6 +60,6 @@ if __name__ == '__main__':
 
     else:
         # conversion
-        for file in selected_file:
-            stream.setup_stream()
-            stream.run()
+        stream.convert()
+        # run from setup_setup
+        # stream.run()
