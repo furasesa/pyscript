@@ -242,6 +242,7 @@ supported format name,
     2. extension (ext), 
     3. date (date), 
     4. count (cnt)
+    5. name (name)
 other than key above, treat as string
 
 1. ai (auto increment).
@@ -262,6 +263,8 @@ e.g "{date: '%%y%%m%%d-%%H%%M'}" output: 200918-0938
 4. cnt (count). Total files selected.
 -o "{date: '%%y%%m%%d', name: _sequence_, ai: 1, _of_, cnt}"
 output: 20200918_sequence_1_of_4.flv; ....., 20200918_sequence_4_of_4.mkv
+
+5. name (name). if name is auto, the name get from input.
 '''
                                  )
 

@@ -75,11 +75,6 @@ class Stream:
         self.probed_streams = probed_streams
 
     def setup_stream(self):
-        """
-        :param input_file: list
-        TODO:
-        set input from main
-        """
         for probed_file, probe in self.probed_streams:
             self.working_file = probed_file
             logging.debug('working file: %s' % self.working_file)
@@ -91,7 +86,7 @@ class Stream:
             logging.debug("""
             video context: %s
             audio context: %s
-            """ %(video_context, audio_context))
+            """ % (video_context, audio_context))
             if video_context is not None:
                 self.stream_video = self.stream_input.video
                 logging.debug("stream video type: %s" % self.stream_video)
