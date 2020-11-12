@@ -6,6 +6,8 @@ from .options import get_main_args
 from .options import get_global_args
 import youtube_dl as ydl
 from youtube_dl.utils import format_bytes
+from prompt_toolkit.shortcuts import checkboxlist_dialog
+from .context import ContextManager
 
 
 def downloader(u_semaphore, u_pool, u_opts, u_url):
@@ -28,88 +30,38 @@ def downloader(u_semaphore, u_pool, u_opts, u_url):
         pool.makeInactive(name)
 
 
-def format_note(fdict):
-    res = ''
-    if fdict.get('ext') in ['f4f', 'f4m']:
-        res += '(unsupported) '
-    if fdict.get('language'):
-        if res:
-            res += ' '
-        res += '[%s] ' % fdict['language']
-    if fdict.get('format_note') is not None:
-        res += fdict['format_note'] + ' '
-    if fdict.get('tbr') is not None:
-        res += '%4dk ' % fdict['tbr']
-    if fdict.get('container') is not None:
-        if res:
-            res += ', '
-        res += '%s container' % fdict['container']
-    if (fdict.get('vcodec') is not None
-            and fdict.get('vcodec') != 'none'):
-        if res:
-            res += ', '
-        res += fdict['vcodec']
-        if fdict.get('vbr') is not None:
-            res += '@'
-    elif fdict.get('vbr') is not None and fdict.get('abr') is not None:
-        res += 'video@'
-    if fdict.get('vbr') is not None:
-        res += '%4dk' % fdict['vbr']
-    if fdict.get('fps') is not None:
-        if res:
-            res += ', '
-        res += '%sfps' % fdict['fps']
-    if fdict.get('acodec') is not None:
-        if res:
-            res += ', '
-        if fdict['acodec'] == 'none':
-            res += 'video only'
-        else:
-            res += '%-5s' % fdict['acodec']
-    elif fdict.get('abr') is not None:
-        if res:
-            res += ', '
-        res += 'audio'
-    if fdict.get('abr') is not None:
-        res += '@%3dk' % fdict['abr']
-    if fdict.get('asr') is not None:
-        res += ' (%5dHz)' % fdict['asr']
-    if fdict.get('filesize') is not None:
-        if res:
-            res += ', '
-        res += format_bytes(fdict['filesize'])
-    elif fdict.get('filesize_approx') is not None:
-        if res:
-            res += ', '
-        res += '~' + format_bytes(fdict['filesize_approx'])
-    return res
-
-
-def get_ydl_format(u_semaphore, u_pool, u_url):
-    # formats = info_dict.get('formats', [info_dict])
+def build_context(u_semaphore, u_pool, u_url):
     with u_semaphore:
         name = threading.currentThread().getName()
         u_pool.makeActive(name)
-        # ydl_opts = {
-        #     'forcejson': True,
-        # }
         try:
-            mdict = dict(ydl.YoutubeDL({'forcejson': True}).extract_info(u_url, download=False))
-            formats = mdict.get('formats', [mdict])
-            table = [
-                [ydl.YoutubeDL.format_resolution(f), f['format_id'], f['ext'], format_note(f)]
-                for f in formats
-                if f.get('preference') is None or f['preference'] >= -1000]
-            # logging.debug(formats)
-            for t in table:
-                print(t)
+            return dict(ydl.YoutubeDL({'forcejson': True}).extract_info(u_url, download=False))
         except ydl.utils.DownloadError as err:
             # logging.error(err)
             logging.error('some error found')
 
 
 if __name__ == '__main__':
+    main_args = get_main_args()
+    url = main_args.get('input')
     pool = ActivePool()
+    semaphore = threading.Semaphore(2)
+
+    for uri in url:
+        # info_dict = threading.Thread(target=build_context, name="context builder",
+        #                              args=(semaphore, pool, uri)).start()
+
+        info_dict = dict(ydl.YoutubeDL({'forcejson': True}).extract_info(uri, download=False))
+        ctm = ContextManager(info_dict)
+        print(ctm.get_raw_context())
+        print(ctm.get_filtered_context())
+
+        selected_list = checkboxlist_dialog(
+                    title="Download Quality",
+                    text="Please Select to download",
+                    values=ctm.get_raw_context()
+                ).run()
+        print(selected_list)
     # semaphore = threading.Semaphore(2)
     #
     # global_args = get_global_args()

@@ -41,9 +41,13 @@ def parse_option():
                               help='output format'
                               )
 
-    global_group.add_argument('-v', '--verbosity',
+    global_group.add_argument('-v',
                               action='store',
-                              help='output format'
+                              dest='verbosity',
+                              type=int,
+                              default=3,
+                              choices=range(1, 6, 1),
+                              help='verbosity'
                               )
 
     global_group.add_argument('-d', '--downloader',
@@ -52,7 +56,8 @@ def parse_option():
                               )
 
     main_group = parser.add_argument_group('main options')
-    main_group.add_argument('-i', '--input',
+    main_group.add_argument('-i',
+                            dest='input',
                             action='append',
                             help='add link',
                             required=True
@@ -74,11 +79,11 @@ def parse_option():
 
 main_args = {}
 global_args = {}
-option = parse_option()
+options = parse_option()
 
 
 def conversion_validation(group_args, key):
-    v = vars(option).get(key)
+    v = vars(options).get(key)
     if v is not None:
         logging.debug('%s : %s ' % (key, v))
         group_args.update({key: v})
