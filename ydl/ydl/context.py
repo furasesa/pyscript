@@ -1,4 +1,5 @@
 import logging
+import youtube_dl
 
 
 def get_value(format_dict, key):
@@ -36,21 +37,80 @@ def get_video_specific(format_dict):
 
 
 class ContextManager:
-    def __init__(self, dct):
-        self.info_dict = dct
-        self.formats = dct.get('formats', [dct])
-        self.result = []
-        self.all_result = []
-        self.filter_builder()
-        self.raw_builder()
+    def __init__(self):
+        # self.formats = None
+        self.info_list = []
+        self.all_formats = []
+        self.video_formats = []
+        self.audio_formats = []
+        # self.format_list = []
+        # self.combined_result = []
+        # self.all_result = []
+        # self.audio_only_format = []
 
-    def get_filtered_context(self):
-        return self.result
+    def generate_info(self, url):
+        try:
+            for uri in url:
+                info_pack = {}
+                json_info = youtube_dl.YoutubeDL({'forcejson': True}).extract_info(uri, download=False)
+                # self.format_list.append((uri, info.get('formats', [info])))
 
-    def get_raw_context(self):
-        return self.all_result
+                # [({'url': link}, {id: id}, {formats: fmt})]
+                video_id = json_info.get('id')
+                uploader = json_info.get('uploader')
+                title = json_info.get('title')
+                upload_date = json_info.get('uploade_date')
+                description = json_info.get('description')
+                categories = json_info.get('categories')
+                duration = json_info.get('duration')
+                webpage_url = json_info.get('webpage_url')
+                if webpage_url is None:
+                    webpage_url = uri
+                view_count = json_info.get('view_count')
+                average_rating = json_info.get('average_rating')
+                formats = json_info.get('formats')
 
-    def raw_builder(self):
+                info_pack.update({
+                    'video_id': video_id,
+                    'uploader': uploader,
+                    'title': title,
+                    'upload_date': upload_date,
+                    'description': description,
+                    'categories': categories,
+                    'duration': duration,
+                    'webpage_url': webpage_url,
+                    'view_count': view_count,
+                    'average_rating': average_rating,
+                    'formats': formats
+                })
+                # print('info pack\n', info_pack, '\n\n')
+                self.info_list.append(info_pack)
+                self.all_formats_builder(title, webpage_url, formats)
+
+        except youtube_dl.DownloadError as e:
+            logging.error('{}', e)
+
+    def print_info_list(self):
+        for info in self.info_list:
+            print('\n\n', info, '\n\n')
+
+    def print_all_format(self):
+        for info in self.all_formats:
+            print('\n\n', info, '\n\n')
+
+    #
+    # def get_filtered_context(self):
+    #     return self.combined_result
+    #
+    def get_all_formats(self):
+        return self.all_formats
+    #
+    # def get_audio_only_context(self):
+    #     return self.audio_only_format
+
+    def all_formats_builder(self, title, url, formats):
+        all_format_pack = {}
+        format_selector = []
         def get_codec_type(format_dict,):
             if format_dict.get('vcodec') == 'none':
                 return 'audio_only'
@@ -59,7 +119,7 @@ class ContextManager:
             else:
                 return 'av'
 
-        for fmt in self.formats:
+        for fmt in formats:
             format_id = fmt['format_id']
             ext = fmt['ext']
             codec_type = get_codec_type(fmt)
@@ -77,74 +137,100 @@ class ContextManager:
 
             if video_spec is not None and audio_spec is not None:
                 # av
-                specific = '%s + %s' % (video_spec, audio_spec)
+                specific = '{} + {}'.format(video_spec, audio_spec)
             elif audio_spec is None:
                 # video only
-                specific = '%s' % video_spec
+                specific = '{}'.format(video_spec)
             elif video_spec is None:
                 # audio only
-                specific = '%s' % audio_spec
+                specific = '{}'.format(audio_spec)
             else:
                 # not supported
                 specific = None
 
-            self.all_result.append((
-                format_id,
-                '{:6} {}'.format(ext, specific)
-            ))
+            format_selector.append((format_id, '{:6} {}'.format(ext, specific)))
+
+        # title, url, format_selector = tuple
+        all_format_pack.update({
+            'url': url,
+            'title': title,
+            'format_selector': format_selector
+        })
+
+        self.all_formats.append(all_format_pack)
 
         # logging.info(self.all_result)
 
-    def filter_builder(self):
-        global webm_audio_spec
-        global m4a_spec
-        for fmt in self.formats:
-            format_id = fmt['format_id']
-            ext = fmt['ext']
+    # def video_format_builder(self, title, url, formats):
+    #     global webm_audio_spec
+    #     global m4a_spec
+    #
+    #     for fmt in formats:
+    #         format_id = fmt['format_id']
+    #         ext = fmt['ext']
+    #         audio_format_pack = {}
+    #         video_format_pack = {}
+    #         # initialize audio id for mp4 video
+    #         if int(format_id) == 140:
+    #             m4a_spec = get_audio_specific(fmt)
+    #             # logging.info('%s\t%s' % (format_id, m4a_spec))
+    #             audio_format_pack.update({
+    #                 'url': url,
+    #                 'title': title,
+    #                 'format_selector': (format_id, '{:6} {}'.format(ext, m4a_spec))
+    #             })
+    #             self.audio_formats.append((
+    #                 '140',
+    #                 '{:6}{}'.format(ext, m4a_spec)
+    #             ))
+    #
+    #         if int(format_id) == 251:
+    #             webm_audio_spec = get_audio_specific(fmt)
+    #             logging.info('%s\t%s' % (format_id, webm_audio_spec))
+    #             self.audio_only_format.append((
+    #                 '251',
+    #                 '{:6}{}'.format(ext, webm_audio_spec)
+    #             ))
+    #
+    #         # webm video
+    #         if int(format_id) in range(243, 247, 1):
+    #             video_spec = get_video_specific(fmt)
+    #             if webm_audio_spec is not None:
+    #                 audio_spec = webm_audio_spec
+    #                 self.combined_result.append((
+    #                     '%s+251' % format_id,
+    #                     '{:6}{}{}'.format(ext, video_spec, audio_spec)
+    #                 ))
+    #
+    #         if int(format_id) in range(303, 305, 1):
+    #             video_spec = get_video_specific(fmt)
+    #             if webm_audio_spec is not None:
+    #                 audio_spec = webm_audio_spec
+    #                 self.combined_result.append((
+    #                     '%s+251' % format_id,
+    #                     '{:6}{}{}'.format(ext, video_spec, audio_spec)
+    #                 ))
+    #
+    #         if int(format_id) in range(134, 136, 1):
+    #             video_spec = get_video_specific(fmt)
+    #             if m4a_spec is not None:
+    #                 audio_spec = m4a_spec
+    #                 self.combined_result.append((
+    #                     '%s+140' % format_id,
+    #                     '{:6}{}{}'.format(ext, video_spec, audio_spec)
+    #                 ))
+    #
+    #         if int(format_id) in range(298, 299, 1):
+    #             video_spec = get_video_specific(fmt)
+    #             if m4a_spec is not None:
+    #                 audio_spec = m4a_spec
+    #                 self.combined_result.append((
+    #                     '%s+140' % format_id,
+    #                     '{:6}{}{}'.format(ext, video_spec, audio_spec)
+    #                 ))
 
-            '''
-            audio only format_id 139 140 = m4a; 251 webm
-            
-            360p30  243 webm; 134 mp4
-            480p30  244 webm; 135 mp4
-            720p30  247 webm; 136 mp4
-            720p60  302 webm; 298 mp4
-            1080p60 303 webm; 299 mp4
-            
-            360p30  13  mp4
-            720p30  22  mp4
-            '''
-            # initialize audio id for mp4 video
-            if int(format_id) == 140:
-                m4a_spec = get_audio_specific(fmt)
-                logging.info('%s\t%s' % (format_id, m4a_spec))
-
-            if int(format_id) == 251:
-                webm_audio_spec = get_audio_specific(fmt)
-                logging.info('%s\t%s' % (format_id, webm_audio_spec))
-
-            # webm video
-            if int(format_id) in range(243, 247, 1):
-                video_spec = get_video_specific(fmt)
-                if webm_audio_spec is not None:
-                    audio_spec = webm_audio_spec
-                    self.result.append((
-                        '%s+251' % format_id,
-                        '{:6}{}{}'.format(ext, video_spec, audio_spec)
-                    ))
-
-            if int(format_id) in range(134, 136, 1):
-                video_spec = get_video_specific(fmt)
-                if m4a_spec is not None:
-                    audio_spec = m4a_spec
-                    self.result.append((
-                        '%s+140' % format_id,
-                        '{:6}{}{}'.format(ext, video_spec, audio_spec)
-                    ))
 
         # logging.info(self.result)
-
-
 
 # formats = mdict.get('formats', [mdict])
 # table = [

@@ -31,9 +31,10 @@ def parse_option():
     # global options
     global_group = parser.add_argument_group('global options')
     # Add the arguments
-    global_group.add_argument('-a', '--audio',
+    global_group.add_argument('-a',
+                              dest='audio_only',
                               action='store_true',
-                              help='get audio only source to download',
+                              help='audio format',
                               )
 
     global_group.add_argument('-o', '--output',
@@ -50,7 +51,8 @@ def parse_option():
                               help='verbosity'
                               )
 
-    global_group.add_argument('-d', '--downloader',
+    global_group.add_argument('-d',
+                              dest='downloader',
                               action='store',
                               help='external downloader'
                               )
@@ -63,22 +65,48 @@ def parse_option():
                             required=True
                             )
 
-    main_group.add_argument('-q', '--quality',
+    main_group.add_argument('-q',
+                            dest='quality',
                             action='store',
                             # default=2,
-                            help='no'
+                            help='360p30, 480p30, 720p30, 720p60, 1080p30, 1080p60'
                             )
 
-    main_group.add_argument('-f', '--format',
+    main_group.add_argument('-f',
+                            dest='format_id',
                             action='store',
-                            help='video source download'
+                            help='''
+audio only format_id 139 140 = m4a; 251 webm
+video only
+360p30  243 webm; 134 mp4
+480p30  244 webm; 135 mp4
+720p30  247 webm; 136 mp4
+720p60  302 webm; 298 mp4
+1080p60 303 webm; 299 mp4
+complete video
+360p30  13  mp4
+720p30  22  mp4
+'''
                             )
+    main_group.add_argument('-F',
+                            dest='list_format',
+                            action='store_true',
+                            help='get raw format from json'
+                            )
+
+    postprocessing_group = parser.add_argument_group('post-processing')
+    postprocessing_group.add_argument('-ext',
+                                      dest='extension',
+                                      action='store',
+                                      help='output extension. aac, flac, mp3, m4a, opus, vorbis, wav'
+                                      )
 
     return parser.parse_args()
 
 
 main_args = {}
 global_args = {}
+postprocessing_args = {}
 options = parse_option()
 
 
@@ -91,7 +119,7 @@ def conversion_validation(group_args, key):
 
 
 def get_global_args():
-    conversion_validation(global_args, 'audio')
+    conversion_validation(global_args, 'audio_only')
     conversion_validation(global_args, 'output')
     conversion_validation(global_args, 'verbosity')
     conversion_validation(global_args, 'downloader')
@@ -104,4 +132,12 @@ def get_main_args():
     conversion_validation(main_args, 'quality')
     conversion_validation(main_args, 'format')
     return main_args
+
+
+def get_postprocessing_args():
+    conversion_validation(postprocessing_args, 'extension')
+    return postprocessing_args
+
+
+
 
