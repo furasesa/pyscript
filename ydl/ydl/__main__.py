@@ -53,13 +53,17 @@ if __name__ == '__main__':
     # global
     verbosity = global_args.get('verbosity')
     ext_downloader = global_args.get('downloader')
-    audio_only = global_args.get('audio_only')
+    is_audio_only = global_args.get('audio_only')
     is_all_format = global_args.get('all_format')
+    test_dbg = global_args.get('test')
+
     # post-processing
     extension = postprocessing_args.get('extension')
+    quality = postprocessing_args.get('quality')
 
     # variables
     format_choose = []
+    queue_downloads = []
 
     # options to config
     if ext_downloader:
@@ -78,10 +82,7 @@ if __name__ == '__main__':
             url = fmts.get('url')
             title = fmts.get('title')
             formats = fmts.get('format_selector')
-            # print('url\t{}'.format(url))
-            # print('title\t{}'.format(title))
-            # print('fmt\t{}'.format(formats))
-            # print('\n\n')
+
             selected_list = checkboxlist_dialog(
                 title=title,
                 text="link {}".format(url),
@@ -95,12 +96,48 @@ if __name__ == '__main__':
             else:
                 format_choose = None
 
-            print('format_choose: ', format_choose)
+            queue_downloads.append({'url': url, 'formats': format_choose})
+
+    elif is_audio_only:
+        audio_formats = ctm.get_audio_formats()
+        if extension is not None:
+            codec = extension
+        else:
+            codec = 'mp3'
+        if quality is None:
+            quality = '160'
+        ydl.set_postprocessing(
+            {
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': codec,
+                'preferredquality': quality,
+            },
+        )
+        ydl.set_postprocessing(
+            {
+                'key': 'FFmpegMetadata'
+            },)
+        for fmts in audio_formats:
+            url = fmts.get('url')
+            title = fmts.get('title')
+            formats = fmts.get('format_selector')
+            selected_list = checkboxlist_dialog(
+                title=title,
+                text="link {}".format(url),
+                values=formats
+            ).run()
+            format_choose = selected_list
+            queue_downloads.append({'url': url, 'formats': format_choose})
 
     else:
         # default mode
         video_formats = ctm.get_video_formats()
         # print('\nvideo formats\n',video_formats)
+        if extension is not None:
+            ydl.set_postprocessing({
+                'key': 'FFmpegVideoConvertor',
+                'preferedformat': extension,
+            })
         for fmts in video_formats:
             url = fmts.get('url')
             title = fmts.get('title')
@@ -110,7 +147,20 @@ if __name__ == '__main__':
                 text="link {}".format(url),
                 values=formats
             ).run()
-            print(selected_list)
+            format_choose = selected_list
+            queue_downloads.append({'url': url, 'formats': format_choose})
+
+    for downloads in queue_downloads:
+        url = downloads.get('url')
+        formats = downloads.get('formats')
+        for f in formats:
+            ydl.set_url(url)
+            ydl.set_config('format', f)
+            if test_dbg:
+                ydl.test()
+            else:
+                ydl.run()
+
 
 
 

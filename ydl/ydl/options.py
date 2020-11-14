@@ -43,7 +43,6 @@ def parse_option():
                               help='show all format',
                               )
 
-
     global_group.add_argument('-o', '--output',
                               action='store',
                               help='output format'
@@ -64,6 +63,12 @@ def parse_option():
                               help='external downloader'
                               )
 
+    global_group.add_argument('--test',
+                              dest='test',
+                              action='store_true',
+                              help='compile for debugging'
+                              )
+
     main_group = parser.add_argument_group('main options')
     main_group.add_argument('-i',
                             dest='input',
@@ -72,12 +77,7 @@ def parse_option():
                             required=True
                             )
 
-    main_group.add_argument('-q',
-                            dest='quality',
-                            action='store',
-                            # default=2,
-                            help='360p30, 480p30, 720p30, 720p60, 1080p30, 1080p60'
-                            )
+
 
     main_group.add_argument('-f',
                             dest='format_id',
@@ -108,6 +108,13 @@ complete video
                                       help='output extension. aac, flac, mp3, m4a, opus, vorbis, wav'
                                       )
 
+    postprocessing_group.add_argument('-q',
+                                      dest='quality',
+                                      action='store',
+                                      # default=2,
+                                      help=''
+                                      )
+
     return parser.parse_args()
 
 
@@ -131,19 +138,20 @@ def get_global_args():
     conversion_validation(global_args, 'output')
     conversion_validation(global_args, 'verbosity')
     conversion_validation(global_args, 'downloader')
+    conversion_validation(global_args, 'test')
     return global_args
 
 
 def get_main_args():
     # main options
     conversion_validation(main_args, 'input')
-    conversion_validation(main_args, 'quality')
     conversion_validation(main_args, 'format')
     return main_args
 
 
 def get_postprocessing_args():
     conversion_validation(postprocessing_args, 'extension')
+    conversion_validation(postprocessing_args, 'quality')
     return postprocessing_args
 
 

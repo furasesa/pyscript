@@ -6,9 +6,9 @@ import youtube_dl
 
 class Downloader:
     def __init__(self):
-        self.url = []
         self.ydl_opt = {}
         self.postprocessing = []
+        self.url = None
 
     def set_config(self, key, val):
         logging.debug('{}: {}'.format(key, val))
@@ -18,15 +18,25 @@ class Downloader:
         logging.debug('{}'.format(pp_config))
         self.postprocessing.append(pp_config)
 
-    def add_url(self, url):
-        self.url.append(url)
+    def set_url(self, link):
+        self.url = link
 
     def run(self):
         if len(self.postprocessing) > 0:
             self.ydl_opt.update({
                 'postprocessing': self.postprocessing
             })
-            # self.set_config('postprocessing', {self.postprocessing})
-        logging.debug('length ydl_opts: {}'.format(len(self.ydl_opt)))
-        logging.debug('ydl_opts: {}'.format(self.ydl_opt))
+        if self.url is not None:
+            with youtube_dl.YoutubeDL(self.ydl_opt) as ydl:
+                ydl.download([self.url])
+
+    def test(self):
+        if len(self.postprocessing) > 0:
+            self.ydl_opt.update({
+                'postprocessing': self.postprocessing
+            })
+        if self.url is not None:
+            logging.debug('download simulation:\nwith youtube_dl.YoutubeDL({}) as ydl:\n\tydl.download([{}])'
+                          .format(self.ydl_opt, self.url))
+
 

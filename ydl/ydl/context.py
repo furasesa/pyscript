@@ -189,6 +189,7 @@ class ContextManager:
         audio_format_pack = {}
         video_format_pack = {}
         video_selector_list = []
+        audio_selector_list = []
 
         for fmt in formats:
             format_id = fmt['format_id']
@@ -196,22 +197,11 @@ class ContextManager:
             # initialize audio id for mp4 video
             if format_id == '140':
                 m4a_spec = get_audio_specific(fmt)
-                audio_format_pack.update({
-                    'url': url,
-                    'title': title,
-                    'format_selector': (format_id, '{:6} {}'.format(ext, m4a_spec))
-                })
-                self.audio_formats.append(audio_format_pack)
+                audio_selector_list.append((format_id, '{:6} {}'.format(ext, m4a_spec)))
 
             if format_id == '251':
                 webm_audio_spec = get_audio_specific(fmt)
-                # logging.info('%s\t%s' % (format_id, webm_audio_spec))
-                audio_format_pack.update({
-                    'url': url,
-                    'title': title,
-                    'format_selector': (format_id, '{:6} {}'.format(ext, webm_audio_spec))
-                })
-                self.audio_formats.append(audio_format_pack)
+                audio_selector_list.append((format_id, '{:6} {}'.format(ext, webm_audio_spec)))
 
             # webm video
             if format_id in self.webm_video_list:
@@ -229,11 +219,17 @@ class ContextManager:
                     audio_spec = m4a_spec
                     video_selector_list.append(('%s+140' % format_id, '{:6}{}{}'.format(ext, video_spec, audio_spec)))
 
+        audio_format_pack.update({
+            'url': url,
+            'title': title,
+            'format_selector': audio_selector_list
+        })
         video_format_pack.update({
             'url': url,
             'title': title,
             'format_selector': video_selector_list
         })
+        self.audio_formats.append(audio_format_pack)
         self.video_formats.append(video_format_pack)
 
         # logging.info(self.result)
