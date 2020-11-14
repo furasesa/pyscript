@@ -37,6 +37,13 @@ def parse_option():
                               help='audio format',
                               )
 
+    global_group.add_argument('-all',
+                              dest='all_format',
+                              action='store_true',
+                              help='show all format',
+                              )
+
+
     global_group.add_argument('-o', '--output',
                               action='store',
                               help='output format'
@@ -120,6 +127,7 @@ def conversion_validation(group_args, key):
 
 def get_global_args():
     conversion_validation(global_args, 'audio_only')
+    conversion_validation(global_args, 'all_format')
     conversion_validation(global_args, 'output')
     conversion_validation(global_args, 'verbosity')
     conversion_validation(global_args, 'downloader')

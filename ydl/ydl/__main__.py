@@ -35,57 +35,84 @@ from .context import ContextManager
 if __name__ == '__main__':
     ydl = Downloader()
     ctm = ContextManager()
+    webm_video_list = ctm.get_webm_video_list()
+    mp4_video_list = ctm.get_mp4_video_list()
+    va_list = ctm.get_va_list()
 
-    main_args = get_main_args()
-    global_args = get_global_args()
-    postprocessing_args = get_postprocessing_args()
-
-    # ydl_opts = {}
-    # postprocessors = []
-
+    # threading init
     pool = ActivePool()
     semaphore = threading.Semaphore(2)
 
-    # read options
+    # options args init
+    main_args = get_main_args()
+    global_args = get_global_args()
+    postprocessing_args = get_postprocessing_args()
     # main
     url = main_args.get('input')
     get_list_format = main_args.get('list_format')
-
     # global
     verbosity = global_args.get('verbosity')
     ext_downloader = global_args.get('downloader')
     audio_only = global_args.get('audio_only')
-
-    #post-processing
+    is_all_format = global_args.get('all_format')
+    # post-processing
     extension = postprocessing_args.get('extension')
 
+    # variables
+    format_choose = []
+
+    # options to config
     if ext_downloader:
-        # ydl_opts.update({'external_downloader': ext_downloader})
         ydl.set_config('external_downloader', ext_downloader)
 
     if verbosity > 0:
-        # ydl_opts.update({'verbose': True})
         ydl.set_config('verbose', True)
 
+    # generate context from url
     ctm.generate_info(url)
-    # print(ctm.get_all_formats())
-    # ydl.add_url(url)
 
-    af = ctm.get_all_formats()
+    # show all formats
+    if is_all_format:
+        all_formats = ctm.get_all_formats()
+        for fmts in all_formats:
+            url = fmts.get('url')
+            title = fmts.get('title')
+            formats = fmts.get('format_selector')
+            # print('url\t{}'.format(url))
+            # print('title\t{}'.format(title))
+            # print('fmt\t{}'.format(formats))
+            # print('\n\n')
+            selected_list = checkboxlist_dialog(
+                title=title,
+                text="link {}".format(url),
+                values=formats
+            ).run()
 
-    for i in af:
-        url = i.get('url')
-        title = i.get('title')
-        formats = i.get('format_selector')
-        print('url\t{}'.format(url))
-        print('title\t{}'.format(title))
-        print('fmt\t{}'.format(formats))
-        print('\n\n')
-        selected_list = checkboxlist_dialog(
-            title=title,
-            text="link {}".format(url),
-            values=formats
-        ).run()
+            if '140' in selected_list:
+                format_choose = ['140+'+v for v in mp4_video_list if v in selected_list]
+            elif '251' in selected_list:
+                format_choose = ['251+' + v for v in webm_video_list if v in selected_list]
+            else:
+                format_choose = None
+
+            print('format_choose: ', format_choose)
+
+    else:
+        # default mode
+        video_formats = ctm.get_video_formats()
+        # print('\nvideo formats\n',video_formats)
+        for fmts in video_formats:
+            url = fmts.get('url')
+            title = fmts.get('title')
+            formats = fmts.get('format_selector')
+            selected_list = checkboxlist_dialog(
+                title=title,
+                text="link {}".format(url),
+                values=formats
+            ).run()
+            print(selected_list)
+
+
 
     # if get_list_format:
     #     print(ctm.get_raw_context())
