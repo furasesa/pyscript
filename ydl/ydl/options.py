@@ -69,6 +69,12 @@ def parse_option():
                               help='compile for debugging'
                               )
 
+    global_group.add_argument('--ph', '--phone',
+                              dest='phone',
+                              action='store_true',
+                              help='-o ~/storage/downloads/youtube-dl/%(title)s.%(ext)s'
+                              )
+
     main_group = parser.add_argument_group('main options')
     main_group.add_argument('-i',
                             dest='input',
@@ -139,6 +145,7 @@ def get_global_args():
     conversion_validation(global_args, 'verbosity')
     conversion_validation(global_args, 'downloader')
     conversion_validation(global_args, 'test')
+    conversion_validation(global_args, 'phone')
     return global_args
 
 

@@ -56,6 +56,7 @@ if __name__ == '__main__':
     is_audio_only = global_args.get('audio_only')
     is_all_format = global_args.get('all_format')
     test_dbg = global_args.get('test')
+    phone_tmpl = global_args.get('phone')
 
     # post-processing
     extension = postprocessing_args.get('extension')
@@ -71,6 +72,9 @@ if __name__ == '__main__':
 
     if verbosity > 0:
         ydl.set_config('verbose', True)
+
+    if phone_tmpl:
+        ydl.set_config('outtmpl', '~/storage/downloads/youtube-dl/%(title)s.%(ext)s')
 
     # generate context from url
     ctm.generate_info(url)
