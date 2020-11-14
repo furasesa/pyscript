@@ -37,7 +37,7 @@ def parse_option():
                               help='audio format',
                               )
 
-    global_group.add_argument('-all',
+    global_group.add_argument('--all',
                               dest='all_format',
                               action='store_true',
                               help='show all format',
@@ -102,7 +102,7 @@ complete video
                             )
 
     postprocessing_group = parser.add_argument_group('post-processing')
-    postprocessing_group.add_argument('-ext',
+    postprocessing_group.add_argument('--ext',
                                       dest='extension',
                                       action='store',
                                       help='output extension. aac, flac, mp3, m4a, opus, vorbis, wav'

@@ -106,14 +106,14 @@ if __name__ == '__main__':
             codec = 'mp3'
         if quality is None:
             quality = '160'
-        ydl.set_postprocessing(
+        ydl.set_postprocessors(
             {
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': codec,
                 'preferredquality': quality,
             },
         )
-        ydl.set_postprocessing(
+        ydl.set_postprocessors(
             {
                 'key': 'FFmpegMetadata'
             },)
@@ -134,7 +134,7 @@ if __name__ == '__main__':
         video_formats = ctm.get_video_formats()
         # print('\nvideo formats\n',video_formats)
         if extension is not None:
-            ydl.set_postprocessing({
+            ydl.set_postprocessors({
                 'key': 'FFmpegVideoConvertor',
                 'preferedformat': extension,
             })
