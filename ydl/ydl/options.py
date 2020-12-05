@@ -72,7 +72,7 @@ def parse_option():
     global_group.add_argument('--ph', '--phone',
                               dest='phone',
                               action='store_true',
-                              help='-o ~/storage/downloads/youtube-dl/%(title)s.%(ext)s'
+                              help='-o ~/storage/downloads/youtube-dl/'
                               )
 
     main_group = parser.add_argument_group('main options')
@@ -118,7 +118,11 @@ complete video
                                       dest='quality',
                                       action='store',
                                       # default=2,
-                                      help=''
+                                      help='''
+preffered quality. could be 0,1 or 128 for 128k of
+bitrates. 0 is best. if uses bitrate it must not
+to be greater than 160k.
+'''
                                       )
 
     return parser.parse_args()
@@ -160,7 +164,3 @@ def get_postprocessing_args():
     conversion_validation(postprocessing_args, 'extension')
     conversion_validation(postprocessing_args, 'quality')
     return postprocessing_args
-
-
-
-
